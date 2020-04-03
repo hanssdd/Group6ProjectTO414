@@ -1,30 +1,29 @@
 ---
 title: "project3"
-author: "Yiwen Lin"
+author: "Group6"
 date: "3/25/2020"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
+absent <-read.csv("Absenteeism_at_work.csv")
+str(absent)
+absent$ID <- as.factor(absent$ID)
+absent$Reason.for.absence <- as.factor(absent$Reason.for.absence)
+absent$Month.of.absence <- as.factor(absent$Month.of.absence)
+absent$Day.of.the.week <- as.factor(absent$Day.of.the.week)
+absent$Seasons <- as.factor(absent$Season)
+absent$Disciplinary.failure <-as.factor(absent$Disciplinary.failure)
+absent$Education <- as.factor(absent$Education)
+absent$Social.drinker <-as.factor(absent$Social.drinker)
+absent$Social.smoker <-as.factor(absent$Social.smoker)
+absent$ID <- NULL
+##absent$Reason.for.absence<-NULL
+##absent$Month.of.absence <- NULL
+lm1 <-lm(Absenteeism.time.in.hours ~.,data=absent)
+summary(lm1)
+# ANN/Decision tree/Logistic Rminer?
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
