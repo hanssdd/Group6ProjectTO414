@@ -1,7 +1,7 @@
 ---
-title: "project3"
-author: "Group6"
-date: "3/25/2020"
+title: "Project3"
+author: "Group 6"
+date: "4/2/2020"
 output: html_document
 ---
 
@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
 absent <-read.csv("Absenteeism_at_work.csv")
 str(absent)
+
 absent$ID <- as.factor(absent$ID)
 absent$Reason.for.absence <- as.factor(absent$Reason.for.absence)
 absent$Month.of.absence <- as.factor(absent$Month.of.absence)
@@ -22,6 +23,7 @@ absent$Social.smoker <-as.factor(absent$Social.smoker)
 absent$ID <- NULL
 ##absent$Reason.for.absence<-NULL
 ##absent$Month.of.absence <- NULL
+
 lm1 <-lm(Absenteeism.time.in.hours ~.,data=absent)
 summary(lm1)
 # ANN/Decision tree/Logistic Rminer?
