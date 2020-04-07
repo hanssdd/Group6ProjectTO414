@@ -28,35 +28,35 @@ lm1 <-lm(Absenteeism.time.in.hours ~.,data=absent) %>% stepAIC(trace = FALSE, di
 summary(lm1)
 # ANN/Decision tree/Logistic Rminer?
 ```
-Reason for absense:Some of them are significant while some are not. I guess that's because some reasons are commonplace or popular while others are more personal.
+Reason for absense:Some of them are significant while some are not. I guess that's because some reasons are commonplace or popular while others are more personal and not widely used.
 
-Month of absence is not a significant factor, however by common sense, we would expect people take more leaves during Christams season, and less leaves after the Christams and New Year Holiday, which is the first quarter of the year.
+Month of absence:It is not a significant factor, however by common sense, we would expect people to take more leaves during holiday season,such as Christams and New Year Holiday,and take less leaves after that, which is the first quarter of the year.
 
-Day of the Week:
+Day of the Week: Comparatively, people take more leaves in the first few days of the week, one possible explanation is people tend to have "Monday Syndrome", and in the last few workdays(Thursdays and Fridays) they tend to work harder and longer to finish the work in time in order to have a good weekend.
 
-Seasons: Similar to Month of absense. We can see people take longer leaves during season 2,3,4 than season 1, I guess that's because in season 1 most people just come back from Christmas and New Year Holiday.
+Seasons: Similar to Month of absense. We can see people take longer leaves during season 2,3,4 than season 1, I guess that's because in season 1 most people just come back from Christmas and New Year Holiday, and there are less holidays in season 1.
 
-Transportation expense: Most people would expect people who need more transportation expenses to have more absense. Interestingly, the coefficient is really small, also it is not significant. I guess this is because most people won't consider transportation expenses when they are thinking if they want to go to work today (since you can make more money than transportation expenses if you work)
+Transportation expense: We expected that people who need more transportation expenses tend to have more absense. Interestingly, the coefficient is postive but really small, also it is not significant. I guess this is because most people won't consider transportation expenses when they are thinking if they want to go to work today (since you can make more money than transportation expenses if you work)
 
-Distance from Residence to Work: The result is kind of counterintuitive since we normally expect people who liver closer to the company will show up more compared to people who don't. Though it is not significant, the relationship is negative. Maybe it is becuase people who liver closer tend to procrastinate and leave home later than people who live farther away.
+Distance from Residence to Work: The result is kind of counterintuitive since we expectd that people who liver closer to the company will show up more compared to people who don't. Though it is not significant, the relationship is negative. Maybe it is becuase people who liver closer tend to procrastinate and leave home later than people who live farther away and get up earlier.
 
 Service time:Intuitively, people who do more volunteer work would of course ask for more leaves than people who don't.
 
-Age:Older people may ask for more leaves due to health issues, or because they are more senior so the legwork can be handed to juniors.
+Age:Older people may ask for more leaves due to health issues, or because they are more senior so the legwork can be handed to juniors and they can leave earlier.
 
-Work load Average day:The coefficient is negative, because the more workload you have the less likely you will take a break.
+Work load Average day:The coefficient is negative, which is straigtforward because the more workload you have the less likely you will take a break.
 
 Hit target:If you have hit the target of your manager/your team, you can be rewarded with more breaks.
 
 Education:The higher degree you have, the more capable you are and therefore, you will need to handle more challenging work that may require more time.
 
-Son:It is pretty straightforward that more kids means people need more parenting time and parental leaves, therefore the relationship is negative.
+Son:It is pretty straightforward that more kids means people need more commitment to the family and more parental leaves, therefore the relationship is negative.
 
 Social drinker: ?
 
 Social smoker: ?
 
-Pet:We expected it to be similar to "Son", however the relationship is negative. One possible interpreation is that people who have pets are mostly young people who don't have kids, and pets need less dedication that kids(since you don't need to cook for pets and tutor them)
+Pet:We expected it to be similar to "Son", however the relationship is negative. One possible interpreation is that people who have pets are mostly young people who don't have kids. Also, pets need less dedication that kids(since you don't need to cook for pets and tutor them)
 
-Weight, Height, Body mass index:We expected a healthy body would save people from taking sick leaves.
+Weight, Height, Body mass index:We expected a healthy body would save people from taking sick leaves. Weight and height are very insignificant since people with different heights have different healthy weights. BMI index is also significant since a good BMI is between 18.5-24.9——neither a too high or too low BMI index is good.
 
