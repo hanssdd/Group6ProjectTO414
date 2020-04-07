@@ -24,6 +24,9 @@ absent$ID <- NULL
 ##absent$Reason.for.absence<-NULL
 ##absent$Month.of.absence <- NULL
 
+library(dplyr)
+library(tidyverse)
+library(MASS)
 lm1 <-lm(Absenteeism.time.in.hours ~.,data=absent) %>% stepAIC(trace = FALSE, direction = "forward")
 summary(lm1)
 # ANN/Decision tree/Logistic Rminer?
