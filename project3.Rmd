@@ -24,8 +24,39 @@ absent$ID <- NULL
 ##absent$Reason.for.absence<-NULL
 ##absent$Month.of.absence <- NULL
 
-lm1 <-lm(Absenteeism.time.in.hours ~.,data=absent)
+lm1 <-lm(Absenteeism.time.in.hours ~.,data=absent) %>% stepAIC(trace = FALSE, direction = "forward")
 summary(lm1)
 # ANN/Decision tree/Logistic Rminer?
 ```
+Reason for absense:Some of them are significant while some are not. I guess that's because some reasons are commonplace or popular while others are more personal.
+
+Month of absence is not a significant factor, however by common sense, we would expect people take more leaves during Christams season, and less leaves after the Christams and New Year Holiday, which is the first quarter of the year.
+
+Day of the Week:
+
+Seasons: Similar to Month of absense. We can see people take longer leaves during season 2,3,4 than season 1, I guess that's because in season 1 most people just come back from Christmas and New Year Holiday.
+
+Transportation expense: Most people would expect people who need more transportation expenses to have more absense. Interestingly, the coefficient is really small, also it is not significant. I guess this is because most people won't consider transportation expenses when they are thinking if they want to go to work today (since you can make more money than transportation expenses if you work)
+
+Distance from Residence to Work: The result is kind of counterintuitive since we normally expect people who liver closer to the company will show up more compared to people who don't. Though it is not significant, the relationship is negative. Maybe it is becuase people who liver closer tend to procrastinate and leave home later than people who live farther away.
+
+Service time:Intuitively, people who do more volunteer work would of course ask for more leaves than people who don't.
+
+Age:Older people may ask for more leaves due to health issues, or because they are more senior so the legwork can be handed to juniors.
+
+Work load Average day:The coefficient is negative, because the more workload you have the less likely you will take a break.
+
+Hit target:If you have hit the target of your manager/your team, you can be rewarded with more breaks.
+
+Education:The higher degree you have, the more capable you are and therefore, you will need to handle more challenging work that may require more time.
+
+Son:It is pretty straightforward that more kids means people need more parenting time and parental leaves, therefore the relationship is negative.
+
+Social drinker: ?
+
+Social smoker: ?
+
+Pet:We expected it to be similar to "Son", however the relationship is negative. One possible interpreation is that people who have pets are mostly young people who don't have kids, and pets need less dedication that kids(since you don't need to cook for pets and tutor them)
+
+Weight, Height, Body mass index:We expected a healthy body would save people from taking sick leaves.
 
