@@ -208,7 +208,8 @@ str(absent)</code></pre>
 ##  $ Height                         : int  172 178 170 168 172 170 172 168 196 172 ...
 ##  $ Body.mass.index                : int  30 31 31 24 30 31 27 23 25 29 ...
 ##  $ Absenteeism.time.in.hours      : int  4 0 2 4 2 2 8 4 40 8 ...</code></pre>
-<pre class="r"><code>#absent$ï..ID&lt;- as.factor(absent$ï..ID)
+<pre class="r"><code>##Converting into factors
+#absent$ï..ID&lt;- as.factor(absent$ï..ID)
 absent$Reason.for.absence &lt;- as.factor(absent$Reason.for.absence)
 absent$Month.of.absence &lt;- as.factor(absent$Month.of.absence)
 absent$Day.of.the.week &lt;- as.factor(absent$Day.of.the.week)
@@ -217,7 +218,10 @@ absent$Disciplinary.failure &lt;-as.factor(absent$Disciplinary.failure)
 absent$Education &lt;- as.factor(absent$Education)
 absent$Social.drinker &lt;-as.factor(absent$Social.drinker)
 absent$Social.smoker &lt;-as.factor(absent$Social.smoker)
+
+##Deleting variables
 absent$ï..ID  &lt;- NULL
+absent$ID &lt;- NULL
 absent$Work.load.Average.day&lt;-as.numeric(absent$Work.load.Average.day)
 absent$Month.of.absence&lt;- NULL
 absent$Weight&lt;- NULL
@@ -229,79 +233,93 @@ absent$Seasons&lt;-NULL
 #absent$Education&lt;-NULL
 absent$Transportation.expense&lt;-NULL
 absent$Social.drinker&lt;-NULL
-absent$Disciplinary.failure&lt;-NULL
-
-lm.model &lt;- lm( Absenteeism.time.in.hours ~., data=absent)
+absent$Disciplinary.failure&lt;-NULL</code></pre>
+<p>Linear Regression</p>
+<pre class="r"><code>lm.model &lt;- lm( Absenteeism.time.in.hours ~., data=absent)
 stepmodel &lt;- step(lm.model, direction = &quot;forward&quot;)</code></pre>
-<pre><code>## Start:  AIC=3687.99
-## Absenteeism.time.in.hours ~ ID + Reason.for.absence + Distance.from.Residence.to.Work + 
+<pre><code>## Start:  AIC=3694.14
+## Absenteeism.time.in.hours ~ Reason.for.absence + Distance.from.Residence.to.Work + 
 ##     Service.time + Age + Work.load.Average.day + Hit.target + 
 ##     Education + Son + Social.smoker + Pet + Height + Body.mass.index + 
 ##     is_Thur + is_Seas4</code></pre>
 <pre class="r"><code>summary(stepmodel)</code></pre>
 <pre><code>## 
 ## Call:
-## lm(formula = Absenteeism.time.in.hours ~ ID + Reason.for.absence + 
+## lm(formula = Absenteeism.time.in.hours ~ Reason.for.absence + 
 ##     Distance.from.Residence.to.Work + Service.time + Age + Work.load.Average.day + 
 ##     Hit.target + Education + Son + Social.smoker + Pet + Height + 
 ##     Body.mass.index + is_Thur + is_Seas4, data = absent)
 ## 
 ## Residuals:
 ##     Min      1Q  Median      3Q     Max 
-## -34.507  -3.505  -0.479   1.508 100.157 
+## -34.810  -3.508  -0.499   1.657  98.672 
 ## 
 ## Coefficients:
 ##                                  Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept)                     -36.00854   20.42511  -1.763 0.078347 .  
-## ID                               -0.15773    0.05679  -2.777 0.005631 ** 
-## Reason.for.absence1              10.81977    3.52961   3.065 0.002258 ** 
-## Reason.for.absence2              25.73049   12.11639   2.124 0.034055 *  
-## Reason.for.absence3               6.65778   11.97788   0.556 0.578499    
-## Reason.for.absence4               8.20520    8.77695   0.935 0.350186    
-## Reason.for.absence5               6.26477    7.09100   0.883 0.377281    
-## Reason.for.absence6              19.38207    4.58711   4.225 2.70e-05 ***
-## Reason.for.absence7              10.80460    3.59473   3.006 0.002745 ** 
-## Reason.for.absence8               7.25059    5.18857   1.397 0.162734    
-## Reason.for.absence9              43.08291    6.29381   6.845 1.68e-11 ***
-## Reason.for.absence10             10.78426    3.03397   3.555 0.000404 ***
-## Reason.for.absence11             12.91933    3.01071   4.291 2.03e-05 ***
-## Reason.for.absence12             23.05471    4.63137   4.978 8.11e-07 ***
-## Reason.for.absence13             16.68925    2.49998   6.676 5.03e-11 ***
-## Reason.for.absence14              9.55799    3.28421   2.910 0.003726 ** 
-## Reason.for.absence15              5.76135    8.57976   0.672 0.502122    
-## Reason.for.absence16              3.95794    7.22295   0.548 0.583890    
-## Reason.for.absence17             11.05089   12.13049   0.911 0.362610    
-## Reason.for.absence18              9.59079    3.19249   3.004 0.002759 ** 
-## Reason.for.absence19             19.00762    2.65805   7.151 2.19e-12 ***
-## Reason.for.absence21              8.18152    5.23416   1.563 0.118483    
-## Reason.for.absence22              8.73335    2.75286   3.172 0.001578 ** 
-## Reason.for.absence23              3.76551    2.11476   1.781 0.075417 .  
-## Reason.for.absence24              7.81715    7.07593   1.105 0.269649    
-## Reason.for.absence25              4.22398    2.87642   1.468 0.142424    
-## Reason.for.absence26              7.20891    2.80556   2.570 0.010391 *  
-## Reason.for.absence27              4.70529    2.55165   1.844 0.065605 .  
-## Reason.for.absence28              2.91522    2.20585   1.322 0.186739    
-## Distance.from.Residence.to.Work  -0.09405    0.04340  -2.167 0.030575 *  
-## Service.time                     -0.03893    0.18838  -0.207 0.836350    
-## Age                               0.24727    0.11219   2.204 0.027847 *  
-## Work.load.Average.day            -0.07442    0.04129  -1.802 0.071910 .  
-## Hit.target                        0.10398    0.12813   0.812 0.417328    
-## Education2                       -4.37145    2.18930  -1.997 0.046243 *  
-## Education3                       -4.92908    1.84828  -2.667 0.007835 ** 
-## Education4                       -8.48778    6.14115  -1.382 0.167379    
-## Son                               0.87677    0.46069   1.903 0.057432 .  
-## Social.smoker1                   -1.88239    2.03370  -0.926 0.354975    
-## Pet                              -0.23542    0.44245  -0.532 0.594834    
-## Height                            0.20386    0.08334   2.446 0.014688 *  
-## Body.mass.index                  -0.40346    0.15864  -2.543 0.011196 *  
-## is_Thur                          -2.37347    1.18803  -1.998 0.046125 *  
-## is_Seas4                          1.17627    1.09563   1.074 0.283373    
+## (Intercept)                     -47.37030   20.10732  -2.356 0.018755 *  
+## Reason.for.absence1              10.76040    3.54650   3.034 0.002502 ** 
+## Reason.for.absence2              26.21781   12.17332   2.154 0.031605 *  
+## Reason.for.absence3               8.16555   12.02305   0.679 0.497263    
+## Reason.for.absence4               5.37966    8.75966   0.614 0.539323    
+## Reason.for.absence5               5.35570    7.11747   0.752 0.452021    
+## Reason.for.absence6              20.25247    4.59837   4.404 1.23e-05 ***
+## Reason.for.absence7              10.90908    3.61180   3.020 0.002617 ** 
+## Reason.for.absence8               6.74364    5.21027   1.294 0.195991    
+## Reason.for.absence9              42.59652    6.32160   6.738 3.36e-11 ***
+## Reason.for.absence10             10.56105    3.04747   3.466 0.000562 ***
+## Reason.for.absence11             12.82020    3.02496   4.238 2.56e-05 ***
+## Reason.for.absence12             23.70327    4.64770   5.100 4.38e-07 ***
+## Reason.for.absence13             16.52553    2.51129   6.580 9.22e-11 ***
+## Reason.for.absence14              9.24818    3.29809   2.804 0.005186 ** 
+## Reason.for.absence15              4.90962    8.61547   0.570 0.568955    
+## Reason.for.absence16              2.95067    7.24850   0.407 0.684079    
+## Reason.for.absence17             10.57784   12.18756   0.868 0.385736    
+## Reason.for.absence18             10.22929    3.19949   3.197 0.001451 ** 
+## Reason.for.absence19             18.67124    2.66805   6.998 6.10e-12 ***
+## Reason.for.absence21              8.27241    5.25920   1.573 0.116187    
+## Reason.for.absence22              9.17188    2.76153   3.321 0.000943 ***
+## Reason.for.absence23              3.37024    2.12010   1.590 0.112365    
+## Reason.for.absence24              7.59871    7.10948   1.069 0.285524    
+## Reason.for.absence25              3.97722    2.88885   1.377 0.169032    
+## Reason.for.absence26              7.56162    2.81614   2.685 0.007423 ** 
+## Reason.for.absence27              4.58454    2.56353   1.788 0.074151 .  
+## Reason.for.absence28              2.73538    2.21549   1.235 0.217373    
+## Distance.from.Residence.to.Work  -0.04153    0.03925  -1.058 0.290356    
+## Service.time                      0.10596    0.18188   0.583 0.560370    
+## Age                               0.16342    0.10857   1.505 0.132720    
+## Work.load.Average.day            -0.08307    0.04137  -2.008 0.045031 *  
+## Hit.target                        0.07921    0.12843   0.617 0.537616    
+## Education2                       -3.17616    2.15689  -1.473 0.141319    
+## Education3                       -3.11675    1.73754  -1.794 0.073284 .  
+## Education4                      -10.02528    6.14552  -1.631 0.103276    
+## Son                               1.05282    0.45850   2.296 0.021960 *  
+## Social.smoker1                   -1.33877    2.03398  -0.658 0.510627    
+## Pet                              -0.14610    0.44340  -0.329 0.741883    
+## Height                            0.23827    0.08281   2.877 0.004135 ** 
+## Body.mass.index                  -0.23917    0.14790  -1.617 0.106315    
+## is_Thur                          -2.30086    1.19345  -1.928 0.054273 .  
+## is_Seas4                          1.06987    1.10022   0.972 0.331179    
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
-## Residual standard error: 11.74 on 696 degrees of freedom
-## Multiple R-squared:  0.2695, Adjusted R-squared:  0.2243 
-## F-statistic:  5.97 on 43 and 696 DF,  p-value: &lt; 2.2e-16</code></pre>
+## Residual standard error: 11.8 on 697 degrees of freedom
+## Multiple R-squared:  0.2614, Adjusted R-squared:  0.2169 
+## F-statistic: 5.872 on 42 and 697 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>Preparing the data</p>
+<pre class="r"><code>##Randomizing the data
+set.seed(65)
+absent_r&lt;-absent[sample(nrow(absent)),]
+
+##Turning factors into binary
+absent_mm &lt;- as.data.frame(model.matrix(~ . -1, absent_r)) ##Breaking factors into dummy variables
+
+
+normalize &lt;- function(x) {
+  return ((x - min(x)) / (max(x) - min(x)))
+}
+
+##Normalizing every variable except output
+absent_n &lt;- as.data.frame(lapply(subset(absent_mm,select=c(-Absenteeism.time.in.hours)), normalize))</code></pre>
 <div id="anndecision-treelogistic-rminer" class="section level1">
 <h1>ANN/Decision tree/Logistic Rminer?</h1>
 <p>Reason for absense:Some of them are significant while some are not. I guess that’s because some reasons are commonplace or popular while others are more personal and not widely used.</p>
