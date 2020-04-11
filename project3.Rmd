@@ -110,25 +110,46 @@ absent_n <- as.data.frame(lapply(subset(absent_mm,select=c(-Absenteeism.time.in.
 ```{r}
 ##Dividing response variable into categories 
 absent$timecat <- absent$Absenteeism.time.in.hours
-absent$timecat <- ifelse(absent$timecat == 0, "Not Absent", ifelse (absent$timecat>0 & absent$timecat<8, "<1 day", ifelse(absent$timecat>=8 & absent$timecat<=32, "1-4 days", ifelse(absent$timecat>32 & absent$timecat<=56, "1 week", ifelse(absent$timecat>56 & absent$timecat<=96, "2 weeks", "3 weeks")))))
+absent$timecat <- ifelse(absent$timecat == 0, "not.absent", ifelse (absent$timecat>0 & absent$timecat<8, "less.than.day", ifelse(absent$timecat>=8 & absent$timecat<=32, "one.to.four.days", ifelse(absent$timecat>32 & absent$timecat<=56, "one.week", ifelse(absent$timecat>56 & absent$timecat<=96, "two.week", "three.week")))))
           
 absent$timecat <- as.factor(absent$timecat)
-absent$onehot <- class.ind(absent$timecat)
-
-#Randomizing and Normalizing
-absent2 <- absent #creating dummy data frame to work on 
+absent2 <- absent #creating an alternate data set for classification models 
 absent2$Absenteeism.time.in.hours <- NULL
-absent2$timecat <- NULL
-#View(absent2)
-set.seed(65)
-abs2_random<-absent2[sample(nrow(absent2)),]
-abs2_mm<- model.matrix(~.-1, data=abs2_random[-20]) #removing intercept from -1
 
-normalize<-function(x){
-  return((x-min(x))/(max(x)-min(x)))
+
+##Randomizing the data
+set.seed(65)
+abs_rand<-absent2[sample(nrow(absent)),]
+View(abs_rand)
+
+##Turning factors into binary
+abs_mm <- as.data.frame(model.matrix(~ . -1, abs_rand[-15])) ##Breaking factors into dummy variables
+View(abs_mm)
+
+normalize <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x)))
 }
 
-abs2_normal<-as.data.frame(lapply(abs2_mm[1:19],normalize))
+##Normalizing every variable except output
+abs_norm <- as.data.frame(lapply(abs_mm, normalize))
+absent2 <- cbind(abs_norm, class.ind(absent2$timecat))
+
+#Separating data into test and train data
+library(nnet)
+abs_train <- absent2[1:540, ]
+abs_test <- absent2[541:740, ]
+
+#Setting up the necessary packages for the ANN model
+library(neuralnet)
+
+#Modelling ANN
+abs_model <- neuralnet(formula= less.than.day + not.absent + one.to.four.days + one.week + two.week + three.week ~ ., data=abs_train, hidden = 5, threshold = 0.5)
+plot(abs_model)
+model_results <- compute(abs_model, abs_test[1:43])
+pred_strength <- model_results$net.result
+summary(pred_strength)
+library(caret)
+#so now each of the six outputs have to be converted to a binary result but i'm not sure how to interpret these results and determine a threshold to make a result 0 or 1 pls help!
 ```
 
 
