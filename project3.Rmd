@@ -110,46 +110,114 @@ absent_n <- as.data.frame(lapply(subset(absent_mm,select=c(-Absenteeism.time.in.
 ```{r}
 ##Dividing response variable into categories 
 absent$timecat <- absent$Absenteeism.time.in.hours
-absent$timecat <- ifelse(absent$timecat == 0, "not.absent", ifelse (absent$timecat>0 & absent$timecat<8, "less.than.day", ifelse(absent$timecat>=8 & absent$timecat<=32, "one.to.four.days", ifelse(absent$timecat>32 & absent$timecat<=56, "one.week", ifelse(absent$timecat>56 & absent$timecat<=96, "two.week", "three.week")))))
+absent$timecat <- ifelse(absent$timecat == 0, "Not Absent", ifelse (absent$timecat>0 & absent$timecat<8, "<1 day", ifelse(absent$timecat>=8 & absent$timecat<=32, "1-4 days", ifelse(absent$timecat>32 & absent$timecat<=56, "1 week", ifelse(absent$timecat>56 & absent$timecat<=96, "2 weeks", "3 weeks")))))
           
 absent$timecat <- as.factor(absent$timecat)
-absent2 <- absent #creating an alternate data set for classification models 
+absent$onehot <- class.ind(absent$timecat)
+
+#Randomizing and Normalizing
+absent2 <- absent #creating dummy data frame to work on 
 absent2$Absenteeism.time.in.hours <- NULL
-
-
-##Randomizing the data
+absent2$timecat <- NULL
+#View(absent2)
 set.seed(65)
-abs_rand<-absent2[sample(nrow(absent)),]
-View(abs_rand)
+abs2_random<-absent2[sample(nrow(absent2)),]
+abs2_mm<- model.matrix(~.-1, data=abs2_random[-20]) #removing intercept from -1
 
-##Turning factors into binary
-abs_mm <- as.data.frame(model.matrix(~ . -1, abs_rand[-15])) ##Breaking factors into dummy variables
-View(abs_mm)
-
-normalize <- function(x) {
-  return ((x - min(x)) / (max(x) - min(x)))
+normalize<-function(x){
+  return((x-min(x))/(max(x)-min(x)))
 }
 
-##Normalizing every variable except output
-abs_norm <- as.data.frame(lapply(abs_mm, normalize))
-absent2 <- cbind(abs_norm, class.ind(absent2$timecat))
-
-#Separating data into test and train data
-library(nnet)
-abs_train <- absent2[1:540, ]
-abs_test <- absent2[541:740, ]
-
-#Setting up the necessary packages for the ANN model
-library(neuralnet)
-
-#Modelling ANN
-abs_model <- neuralnet(formula= less.than.day + not.absent + one.to.four.days + one.week + two.week + three.week ~ ., data=abs_train, hidden = 5, threshold = 0.5)
-plot(abs_model)
-model_results <- compute(abs_model, abs_test[1:43])
-pred_strength <- model_results$net.result
-summary(pred_strength)
-library(caret)
-#so now each of the six outputs have to be converted to a binary result but i'm not sure how to interpret these results and determine a threshold to make a result 0 or 1 pls help!
+abs2_normal<-as.data.frame(lapply(abs2_mm[1:19],normalize))
 ```
 
+#Decision Tree
+```{r}
+## Understanding Decision Trees ----
+# calculate entropy of a two-class segment
+-0.60 * log2(0.60) - 0.40 * log2(0.40)
+
+curve(-x * log2(x) - (1 - x) * log2(1 - x),
+      col="red", xlab = "x", ylab = "Entropy", lwd=4)
+
+## Example: Identifying Risky Bank Loans ----
+## Step 2: Exploring and preparing the data ----
+
+# create a random sample for training and test data
+# use set.seed to use the same random number sequence as the tutorial
+set.seed(12345)
+
+abs2_random$onehot <-as.factor(abs2_random$onehot)
+# split the data frames
+abs_train <- absent_r[1:640, ]
+abs_test  <- absent_r[641:740, ]
+
+# check the proportion of class variable
+prop.table(table(abs_train$timehot))
+prop.table(table(abs_test$timehot))
+
+## Step 3: Training a model on the data ----
+# build the simplest decision tree
+library(C50)
+abs_model <- C5.0(abs_train[-21], abs_train$timecat)
+
+# display simple facts about the tree
+abs_model
+
+# display detailed information about the tree
+summary(abs_model)
+
+#plot(credit_model)
+
+#mod1 <- C5.0(Species ~ ., data = iris)
+#plot(mod1)
+
+## Step 4: Evaluating model performance ----
+# create a factor vector of predictions on test data
+abs_pred <- predict(abs_model, abs_test)
+
+# cross tabulation of predicted versus actual classes
+library(gmodels)
+CrossTable(abs_test$timecat, abs_pred,
+           prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+           dnn = c('actual timecat', 'predicted timecat'))
+
+## Step 5: Improving model performance ----
+
+## Boosting the accuracy of decision trees
+# boosted decision tree with 10 trials
+abs_boost10 <- C5.0(abs_train[-21], abs_train$timecat,
+                       trials = 10)
+abs_boost10
+summary(abs_boost10)
+
+abs_boost_pred10 <- predict(abs_boost10, abs_test)
+CrossTable(abs_test$timecat, abs_boost_pred10,
+           prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+           dnn = c('actual timecat', 'predicted timecat'))
+
+# boosted decision tree with 100 trials (not shown in text)
+abs_boost100 <- C5.0(abs_train[-21], abs_train$timecat,
+                        trials = 100)
+abs_boost_pred100 <- predict(abs_boost100, abs_test)
+CrossTable(abs_test$timecat, abs_boost_pred100,
+           prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+           dnn = c('actual default', 'predicted default'))
+
+## Making some mistakes more costly than others
+# create a cost matrix
+error_cost <- matrix(c(0, 1, 4, 0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0), nrow = 6)
+error_cost
+
+# apply the cost matrix to the tree
+abs_cost <- C5.0(abs_train[-21], abs_train$timecat,
+                          costs = error_cost)
+abs_cost_pred <- predict(abs_cost, abs_test)
+
+CrossTable(abs_test$timecat, abs_cost_pred,
+           prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+           dnn = c('actual default', 'predicted default'))
+
+
+```
 
