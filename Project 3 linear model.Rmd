@@ -1,0 +1,38 @@
+---
+title: "Project 3 linear"
+author: "Samantha Tinor"
+date: "4/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+absent <-read.csv("Absenteeism_at_work2.csv")
+str(absent)
+absent$ï..ID  <- as.factor(absent$ï..ID)
+absent$Reason.for.absence <- as.factor(absent$Reason.for.absence)
+absent$Month.of.absence <- as.factor(absent$Month.of.absence)
+absent$Day.of.the.week <- as.factor(absent$Day.of.the.week)
+absent$Seasons <- as.factor(absent$Season)
+absent$Disciplinary.failure <-as.factor(absent$Disciplinary.failure)
+absent$Education <- as.factor(absent$Education)
+absent$Social.drinker <-as.factor(absent$Social.drinker)
+absent$Social.smoker <-as.factor(absent$Social.smoker)
+absent$ï..ID  <- NULL
+
+lm.model <- lm( Absenteeism.time.in.hours ~., data=absent)
+stepmodel <- step(lm.model, direction = "forward")
+summary(stepmodel)
+
+alias(lm.model)
+```
+

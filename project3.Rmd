@@ -10,12 +10,14 @@ library(tidyverse)
 library(dplyr)
 library(caret)
 library(MASS)
-knitr::opts_chunk$set(echo = TRUE)
-setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
-absent <-read.csv("Absenteeism_at_work.csv")
-str(absent)
+library(BART)
+```
 
-absent$ID <- as.factor(absent$ID)
+
+```{r}
+absent <-read.csv("Absenteeism_at_work2.csv")
+str(absent)
+#absent$ï..ID<- as.factor(absent$ï..ID)
 absent$Reason.for.absence <- as.factor(absent$Reason.for.absence)
 absent$Month.of.absence <- as.factor(absent$Month.of.absence)
 absent$Day.of.the.week <- as.factor(absent$Day.of.the.week)
@@ -24,15 +26,39 @@ absent$Disciplinary.failure <-as.factor(absent$Disciplinary.failure)
 absent$Education <- as.factor(absent$Education)
 absent$Social.drinker <-as.factor(absent$Social.drinker)
 absent$Social.smoker <-as.factor(absent$Social.smoker)
-absent$ID <- NULL
-##absent$Reason.for.absence<-NULL
-##absent$Month.of.absence <- NULL
+absent$ï..ID  <- NULL
+absent$Work.load.Average.day<-as.numeric(absent$Work.load.Average.day)
+absent$Month.of.absence<- NULL
+absent$Weight<- NULL
+absent$is_Thur<-if_else(absent$Day.of.the.week==5,1,0)
+absent$Day.of.the.week<-NULL
+absent$is_Seas4<-if_else(absent$Seasons==4,1,0)
+absent$Seasons<-NULL
+#absent$is_Educ3<-if_else(absent$Education==3,1,0) Once I do this, Seasons and Education3 no longer significant
+#absent$Education<-NULL
+absent$Transportation.expense<-NULL
+absent$Social.drinker<-NULL
+absent$Disciplinary.failure<-NULL
 
+lm.model <- lm( Absenteeism.time.in.hours ~., data=absent)
+stepmodel <- step(lm.model, direction = "forward")
+summary(stepmodel)
+
+<<<<<<< HEAD
 lm1 <-lm(Absenteeism.time.in.hours ~.,data=absent) %>% stepAIC(trace = FALSE, direction = "forward")
 summary(lm1)
 # ANN/Decision tree/Logistic Rminer?
 ```
 Reason for absense: Overall reasons for absence are significant, but some reasons have more of impact than others. I guess that's because some reasons are commonplace or popular while others are more personal and not widely used.
+=======
+```
+
+
+
+# ANN/Decision tree/Logistic Rminer?
+
+Reason for absense:Some of them are significant while some are not. I guess that's because some reasons are commonplace or popular while others are more personal and not widely used.
+>>>>>>> c9636bd54e5868374ddfa4777e4ce6011bd0df83
 
 Month of absence:It is not a significant factor, however by common sense, we would expect people to take more leaves during holiday season,such as Christams and New Year Holiday,and take less leaves after that, which is the first quarter of the year.
 
@@ -61,23 +87,27 @@ Social drinker: ?
 Social smoker: ?
 
 Pet:We expected it to be similar to "Son", however the relationship is negative. One possible interpreation is that people who have pets are mostly young people who don't have kids. Also, pets need less dedication that kids(since you don't need to cook for pets and tutor them)
+<<<<<<< HEAD
 
 
 Weight, Height, Body mass index:We expected a healthy body would save people from taking sick leaves. Weight and height are very insignificant since people with different heights have different healthy weights. BMI index is also significant since a good BMI is between 18.5-24.9——neither a too high or too low BMI index is good.
 
+=======
+<<<<<<< HEAD
+
+Weight, Height, Body mass index:We expected a healthy body would save people from taking sick leaves. Weight and height are very insignificant since people with different heights have different healthy weights. BMI index is also significant since a good BMI is between 18.5-24.9——neither a too high or too low BMI index is good.
+=======
+>>>>>>> c9636bd54e5868374ddfa4777e4ce6011bd0df83
 
 Weight, Height, Body mass index:We expected a healthy body would save people from taking sick leaves. Weight and height are very insignificant since people with different heights have different healthy weights. BMI index is also significant since a good BMI is between 18.5-24.9——neither a too high or too low BMI index is good.
 
 ## ANN Model
+
 ```{r}
-#Dividing response variable into categories 
+##Dividing response variable into categories 
 absent$timecat <- absent$Absenteeism.time.in.hours
-absent$timecat <- ifelse(absent$timecat==0, "Not Absent", 
-                         ifelse(absent$timecat>0 & absent$timecat<8, "<1 day", 
-                                ifelse(absent$timecat>=8 & absent$timecat<=32, "1-4 days", 
-                                       ifelse(absent$timecat>32 & absent$timecat<=56, "1 week", 
-                                              ifelse(absent$timecat>56 & absent$timecat<=96, "2 weeks", "3 weeks")))))
-View(absent)
+absent$timecat <- ifelse(absent$timecat == 0, "Not Absent", ifelse (absent$timecat>0 & absent$timecat<8, "<1 day", ifelse(absent$timecat>=8 & absent$timecat<=32, "1-4 days", ifelse(absent$timecat>32 & absent$timecat<=56, "1 week", ifelse(absent$timecat>56 & absent$timecat<=96, "2 weeks", "3 weeks")))))
+          
 absent$timecat <- as.factor(absent$timecat)
 absent$onehot <- class.ind(absent$timecat)
 
@@ -88,15 +118,18 @@ absent2$timecat <- NULL
 #View(absent2)
 set.seed(65)
 abs2_random<-absent2[sample(nrow(absent2)),]
-abs2_mm<- model.matrix(~.-20, data=abs2_random)
-?model.matrix
+abs2_mm<- model.matrix(~.-1, data=abs2_random[-20]) #removing intercept from -1
 
 normalize<-function(x){
   return((x-min(x))/(max(x)-min(x)))
 }
 
-abs2_normal<-as.data.frame(lapply(ab2_mm[1:19],normalize))
-
+abs2_normal<-as.data.frame(lapply(abs2_mm[1:19],normalize))
 ```
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> c9636bd54e5868374ddfa4777e4ce6011bd0df83
 
