@@ -11,6 +11,8 @@ library(dplyr)
 library(caret)
 library(MASS)
 library(BART)
+library(kernlab)
+library(class)
 ```
 
 
@@ -90,12 +92,22 @@ Weight, Height, Body mass index:We expected a healthy body would save people fro
 
 Preparing the data
 ```{r}
+##Building categories
+absent$ID <-NULL
+absent$timecat <- absent$Absenteeism.time.in.hours
+absent$timecat <- ifelse(absent$timecat == 0, "not.absent", ifelse (absent$timecat>0 & absent$timecat<8, "less.than.day", ifelse(absent$timecat>=8 & absent$timecat<=56, "one.to.seven.days", "more.than.one.week")))
+table(absent$timecat)
+          
+absent$timecat <- as.factor(absent$timecat)
+absent$Absenteeism.time.in.hours <- NULL
+
+
 ##Randomizing the data
 set.seed(65)
 absent_r<-absent[sample(nrow(absent)),]
 
 ##Turning factors into binary
-absent_mm <- as.data.frame(model.matrix(~ . -1, absent_r)) ##Breaking factors into dummy variables
+absent_mm <- as.data.frame(model.matrix(~ . -1, absent_r[-15])) ##Breaking factors into dummy variables
 
 
 normalize <- function(x) {
@@ -103,25 +115,45 @@ normalize <- function(x) {
 }
 
 ##Normalizing every variable except output
-absent_n <- as.data.frame(lapply(subset(absent_mm,select=c(-Absenteeism.time.in.hours)), normalize))
+absent_n <- as.data.frame(lapply(absent_mm, normalize))
+
+
 ```
+
+##KNN Model
+```{r}
+##Getting my own absent from the above
+absent_SP <- cbind(absent_n, absent$timecat)
+
+##Rebulding the test and train data
+abs_train <- absent_SP[1:540, -44]
+abs_test <- absent_SP[541:740,-44]
+abs_train_label <- absent_SP[1:540, 44]
+abs_test_label <- absent_SP[541:740,44]
+
+##building KNN model
+KNN_MODEL <- knn(train = abs_train, test = abs_test,
+                      cl = abs_train_label, k=40)
+
+confusionMatrix(as.factor(KNN_MODEL),as.factor(abs_test_label))
+```
+
+
 ## ANN Model
 
-```{r}
-##Dividing response variable into categories 
+
+Dividing response variable into categories 
 absent$timecat <- absent$Absenteeism.time.in.hours
 absent$timecat <- ifelse(absent$timecat == 0, "not.absent", ifelse (absent$timecat>0 & absent$timecat<8, "less.than.day", ifelse(absent$timecat>=8 & absent$timecat<=32, "one.to.four.days", ifelse(absent$timecat>32 & absent$timecat<=56, "one.week", ifelse(absent$timecat>56 & absent$timecat<=96, "two.week", "three.week")))))
           
-absent$timecat <- as.factor(absent$timecat)
+#absent$timecat <- as.factor(absent$timecat)
 absent2 <- absent #creating an alternate data set for classification models 
 absent2$Absenteeism.time.in.hours <- NULL
 ##Randomizing the data
 set.seed(65)
 abs_rand<-absent2[sample(nrow(absent)),]
-View(abs_rand)
 ##Turning factors into binary
 abs_mm <- as.data.frame(model.matrix(~ . -1, abs_rand[-15])) ##Breaking factors into dummy variables
-View(abs_mm)
 normalize <- function(x) {
   return ((x - min(x)) / (max(x) - min(x)))
 }
@@ -142,7 +174,33 @@ pred_strength <- model_results$net.result
 summary(pred_strength)
 library(caret)
 #so now each of the six outputs have to be converted to a binary result but i'm not sure how to interpret these results and determine a threshold to make a result 0 or 1 pls help!
+
+
+```{r}
+## extract classes
+classes <- levels(absent$timecat)
+
+######################################################################
+# define softmax mapping                                             #
+#  Defn: softmax                                                     #
+#     g(k) := e^{x_k}/sum_{i = 1}^{n} (e^{x_i})                      #
+#  Purpose of softmax is to normalize prediction output of ANN       #
+#  to a probability scale                                            #
+######################################################################
+test_pred<- as.data.frame(pred_strength)
+test_pred <- exp(test_pred)
+test_pred$sum <- rowSums(test_pred)
+test_pred <- test_pred/test_pred$sum
+test_pred$sum <- NULL
+
+## make prediction
+abs_test$pred <- classes[max.col(test_pred)]
+
+## Confusion matrix
+confusionMatrix(as.factor(abs_test$pred), as.factor(absent$timecat[541:740]))
 ```
+
+
 
 
 
