@@ -149,11 +149,7 @@ library(caret)
 #Decision Tree
 ```{r}
 ## Understanding Decision Trees ----
-# calculate entropy of a two-class segment
--0.60 * log2(0.60) - 0.40 * log2(0.40)
 
-curve(-x * log2(x) - (1 - x) * log2(1 - x),
-      col="red", xlab = "x", ylab = "Entropy", lwd=4)
 
 ## Example: Identifying Risky Bank Loans ----
 ## Step 2: Exploring and preparing the data ----
@@ -164,17 +160,17 @@ set.seed(12345)
 
 
 # split the data frames
-abs_train <- abs_rand[1:640, ]
-abs_test  <- abs_rand[641:740, ]
+abs_train_tree <- abs_rand[1:640, ]
+abs_test_tree  <- abs_rand[641:740, ]
 
 # check the proportion of class variable
-prop.table(table(abs_train$timecat))
-prop.table(table(abs_test$timecat))
+prop.table(table(abs_train_tree$timecat))
+prop.table(table(abs_test_tree$timecat))
 
 ## Step 3: Training a model on the data ----
 # build the simplest decision tree
 library(C50)
-abs_model <- C5.0(abs_train[-20], abs_train$timecat)
+abs_model <- C5.0(abs_train_tree[-16], abs_train_tree$timecat)
 
 # display simple facts about the tree
 abs_model
@@ -182,18 +178,18 @@ abs_model
 # display detailed information about the tree
 summary(abs_model)
 
-#plot(credit_model)
+plot(abs_model)
 
 #mod1 <- C5.0(Species ~ ., data = iris)
 #plot(mod1)
 
 ## Step 4: Evaluating model performance ----
 # create a factor vector of predictions on test data
-abs_pred <- predict(abs_model, abs_test)
+abs_pred <- predict(abs_model, abs_test_tree)
 
 # cross tabulation of predicted versus actual classes
 library(gmodels)
-CrossTable(abs_test$timecat, abs_pred,
+CrossTable(abs_test_tree$timecat, abs_pred,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual timecat', 'predicted timecat'))
 
@@ -201,21 +197,21 @@ CrossTable(abs_test$timecat, abs_pred,
 
 ## Boosting the accuracy of decision trees
 # boosted decision tree with 10 trials
-abs_boost10 <- C5.0(abs_train[-20], abs_train$timecat,
+abs_boost10 <- C5.0(abs_train_tree[-20], abs_train_tree$timecat,
                        trials = 10)
 abs_boost10
 summary(abs_boost10)
 
-abs_boost_pred10 <- predict(abs_boost10, abs_test)
-CrossTable(abs_test$timecat, abs_boost_pred10,
+abs_boost_pred10 <- predict(abs_boost10, abs_test_tree)
+CrossTable(abs_test_tree$timecat, abs_boost_pred10,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual timecat', 'predicted timecat'))
 
 # boosted decision tree with 100 trials (not shown in text)
-abs_boost100 <- C5.0(abs_train[-20], abs_train$timecat,
+abs_boost100 <- C5.0(abs_train_tree[-20], abs_train_tree$timecat,
                         trials = 100)
-abs_boost_pred100 <- predict(abs_boost100, abs_test)
-CrossTable(abs_test$timecat, abs_boost_pred100,
+abs_boost_pred100 <- predict(abs_boost100, abs_test_tree)
+CrossTable(abs_test_tree$timecat, abs_boost_pred100,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual default', 'predicted default'))
 
@@ -225,11 +221,11 @@ error_cost <- matrix(c(0, 1, 4, 0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,
 error_cost
 
 # apply the cost matrix to the tree
-abs_cost <- C5.0(abs_train[-210], abs_train$timecat,
+abs_cost <- C5.0(abs_train_tree[-20], abs_train_tree$timecat,
                           costs = error_cost)
-abs_cost_pred <- predict(abs_cost, abs_test)
+abs_cost_pred <- predict(abs_cost, abs_test_tree)
 
-CrossTable(abs_test$timecat, abs_cost_pred,
+CrossTable(abs_test_tree$timecat, abs_cost_pred,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual default', 'predicted default'))
 
