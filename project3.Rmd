@@ -200,6 +200,33 @@ abs_test$pred <- classes[max.col(test_pred)]
 confusionMatrix(as.factor(abs_test$pred), as.factor(absent$timecat[541:740]))
 ```
 
+```{r}
+View(abs_model)
+## extract classes
+classes <- levels(absent$timecat)
+
+######################################################################
+# define softmax mapping                                             #
+#  Defn: softmax                                                     #
+#     g(k) := e^{x_k}/sum_{i = 1}^{n} (e^{x_i})                      #
+#  Purpose of softmax is to normalize prediction output of ANN       #
+#  to a probability scale                                            #
+######################################################################
+test_pred<- as.data.frame(pred_strength)
+test_pred <- exp(test_pred)
+test_pred$sum <- rowSums(test_pred)
+test_pred <- test_pred/test_pred$sum
+test_pred$sum <- NULL
+
+## make prediction
+abs_test$pred <- classes[max.col(test_pred)]
+
+## Confusion matrix
+confusionMatrix(as.factor(abs_test$pred), as.factor(absent$timecat[541:740]))
+```
+
+
+
 
 
 
