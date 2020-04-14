@@ -45,7 +45,9 @@ absent$Seasons<-NULL
 absent$Transportation.expense<-NULL
 absent$Social.drinker<-NULL
 absent$Disciplinary.failure<-NULL
+```
 
+```{r}
 lm.model <- lm( Absenteeism.time.in.hours ~., data=absent)
 stepmodel <- step(lm.model, direction = "forward")
 summary(stepmodel)
@@ -140,9 +142,9 @@ confusionMatrix(as.factor(KNN_MODEL),as.factor(abs_test_label))
 
 
 ## ANN Model
+```{r}
 
-
-Dividing response variable into categories 
+#Dividing response variable into categories 
 absent$timecat <- absent$Absenteeism.time.in.hours
 absent$timecat <- ifelse(absent$timecat == 0, "not.absent", ifelse (absent$timecat>0 & absent$timecat<8, "less.than.day", ifelse(absent$timecat>=8 & absent$timecat<=32, "one.to.four.days", ifelse(absent$timecat>32 & absent$timecat<=56, "one.week", ifelse(absent$timecat>56 & absent$timecat<=96, "two.week", "three.week")))))
           
@@ -160,6 +162,9 @@ normalize <- function(x) {
 ##Normalizing every variable except output
 abs_norm <- as.data.frame(lapply(abs_mm, normalize))
 absent2 <- cbind(abs_norm, class.ind(absent2$timecat))
+```
+
+```{r}
 #Separating data into test and train data
 library(nnet)
 abs_train <- absent2[1:540, ]
@@ -169,12 +174,12 @@ library(neuralnet)
 #Modelling ANN
 abs_model <- neuralnet(formula= less.than.day + not.absent + one.to.four.days + one.week + two.week + three.week ~ ., data=abs_train, hidden = 5, threshold = 0.5)
 plot(abs_model)
-model_results <- compute(abs_model, abs_test[1:43])
+model_results <- compute(abs_model, abs_test[1:42,])
 pred_strength <- model_results$net.result
 summary(pred_strength)
 library(caret)
 #so now each of the six outputs have to be converted to a binary result but i'm not sure how to interpret these results and determine a threshold to make a result 0 or 1 pls help!
-
+```
 
 ```{r}
 ## extract classes
@@ -195,7 +200,6 @@ test_pred$sum <- NULL
 
 ## make prediction
 abs_test$pred <- classes[max.col(test_pred)]
-
 ## Confusion matrix
 confusionMatrix(as.factor(abs_test$pred), as.factor(absent$timecat[541:740]))
 ```
@@ -222,7 +226,7 @@ test_pred$sum <- NULL
 abs_test$pred <- classes[max.col(test_pred)]
 
 ## Confusion matrix
-confusionMatrix(as.factor(abs_test$pred), as.factor(absent$timecat[541:740]))
+confusionMatrix(as.factor(abs_test$pred), as.factor(absent2$timecat[541:740]))
 ```
 
 
@@ -245,6 +249,7 @@ set.seed(12345)
 
 
 # split the data frames
+abs_rand$timecat<-as.factor(abs_rand$timecat)
 abs_train_tree <- abs_rand[1:640, ]
 abs_test_tree  <- abs_rand[641:740, ]
 
@@ -255,7 +260,7 @@ prop.table(table(abs_test_tree$timecat))
 ## Step 3: Training a model on the data ----
 # build the simplest decision tree
 library(C50)
-abs_model <- C5.0(abs_train_tree[-16], abs_train_tree$timecat)
+abs_model <- C5.0(abs_train_tree[-14], abs_train_tree$timecat)
 
 # display simple facts about the tree
 abs_model
@@ -263,7 +268,7 @@ abs_model
 # display detailed information about the tree
 summary(abs_model)
 
-plot(abs_model)
+#plot(abs_model)
 
 #mod1 <- C5.0(Species ~ ., data = iris)
 #plot(mod1)
@@ -277,43 +282,78 @@ library(gmodels)
 CrossTable(abs_test_tree$timecat, abs_pred,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual timecat', 'predicted timecat'))
-
 ## Step 5: Improving model performance ----
 
 ## Boosting the accuracy of decision trees
 # boosted decision tree with 10 trials
-abs_boost10 <- C5.0(abs_train_tree[-20], abs_train_tree$timecat,
+abs_boost10 <- C5.0(abs_train_tree[-14], abs_train_tree$timecat,
                        trials = 10)
 abs_boost10
 summary(abs_boost10)
-
+plot(abs_boost10)
 abs_boost_pred10 <- predict(abs_boost10, abs_test_tree)
 CrossTable(abs_test_tree$timecat, abs_boost_pred10,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual timecat', 'predicted timecat'))
-
+confusionMatrix(abs_test_tree$timecat, abs_boost_pred10)
 # boosted decision tree with 100 trials (not shown in text)
-abs_boost100 <- C5.0(abs_train_tree[-20], abs_train_tree$timecat,
+abs_boost100 <- C5.0(abs_train_tree[-14], abs_train_tree$timecat,
                         trials = 100)
 abs_boost_pred100 <- predict(abs_boost100, abs_test_tree)
 CrossTable(abs_test_tree$timecat, abs_boost_pred100,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual default', 'predicted default'))
-
+confusionMatrix(abs_test_tree$timecat, abs_boost_pred100)
+plot(abs_boost100)
 ## Making some mistakes more costly than others
 # create a cost matrix
 error_cost <- matrix(c(0, 1, 4, 0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0), nrow = 6)
 error_cost
 
-# apply the cost matrix to the tree
-abs_cost <- C5.0(abs_train_tree[-20], abs_train_tree$timecat,
+# apply the cost matrix to the tree  "Reason for absence" accounts for 62% accurancy, it's the most important factor when estimating how long you will be absent. Don't do classfication, do prediction. 
+abs_cost <- C5.0(abs_train_tree[-14], abs_train_tree$timecat,
                           costs = error_cost)
 abs_cost_pred <- predict(abs_cost, abs_test_tree)
 
 CrossTable(abs_test_tree$timecat, abs_cost_pred,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual default', 'predicted default'))
-
-
+confusionMatrix(abs_test_tree$timecat,abs_cost_pred)
+plot(abs_cost)
 ```
 
+
+#KSVM Model
+```{r}
+absent <-read.csv("Absenteeism_at_work2.csv")
+str(absent)
+```
+
+```{r}
+##Converting into factors
+#absent$ï..ID<- as.factor(absent$ï..ID)
+absent$timecat <- as.factor(absent$timecat)
+```
+
+```{r}
+n <- nrow(absent)  # Number of observations
+ntrain <- round(n*0.75)  # 75% for training set
+set.seed(314)    # Set seed for reproducible results
+tindex <- sample(n, ntrain)   # Create a random index
+train_absent <- absent[tindex,]   # Create training set
+test_absent <- absent[-tindex,]   # Create test set
+## Construct SVM Model
+library(e1071)
+svm1 <- svm(timecat~., data=absent, 
+          method="C-classification", kernal="vanilladot", 
+          gamma=0.1, cost=10)
+summary(svm1)
+```
+```{r}
+## Making Predictions
+prediction <- predict(svm1, test_absent)
+## Display confusion matrix
+library(caret)
+xtab <- confusionMatrix(as.factor(test_absent$timecat), as.factor(prediction))
+xtab
+```
