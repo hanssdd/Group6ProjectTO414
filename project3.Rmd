@@ -97,8 +97,7 @@ Preparing the data
 ##Building categories
 absent$ID <-NULL
 absent$timecat <- absent$Absenteeism.time.in.hours
-absent$timecat <- ifelse(absent$timecat == 0, "not.absent", ifelse (absent$timecat>0 & absent$timecat<8, "less.than.day", ifelse(absent$timecat>=8 & absent$timecat<=56, "one.to.seven.days", "more.than.one.week")))
-table(absent$timecat)
+absent$timecat <- ifelse(absent$timecat == 0, "not.absent", ifelse (absent$timecat>0 & absent$timecat<8, "less.than.day", ifelse(absent$timecat>=8 & absent$timecat<=32, "one.to.four.days", ifelse(absent$timecat>32 & absent$timecat<=56, "one.week", ifelse(absent$timecat>56 & absent$timecat<=96, "two.week", "three.week")))))
           
 absent$timecat <- as.factor(absent$timecat)
 absent$Absenteeism.time.in.hours <- NULL
@@ -260,7 +259,7 @@ prop.table(table(abs_test_tree$timecat))
 ## Step 3: Training a model on the data ----
 # build the simplest decision tree
 library(C50)
-abs_model <- C5.0(abs_train_tree[-14], abs_train_tree$timecat)
+abs_model <- C5.0(abs_train_tree[-16], abs_train_tree$timecat)
 
 # display simple facts about the tree
 abs_model
@@ -286,7 +285,7 @@ CrossTable(abs_test_tree$timecat, abs_pred,
 
 ## Boosting the accuracy of decision trees
 # boosted decision tree with 10 trials
-abs_boost10 <- C5.0(abs_train_tree[-14], abs_train_tree$timecat,
+abs_boost10 <- C5.0(abs_train_tree[-16], abs_train_tree$timecat,
                        trials = 10)
 abs_boost10
 summary(abs_boost10)
@@ -297,7 +296,7 @@ CrossTable(abs_test_tree$timecat, abs_boost_pred10,
            dnn = c('actual timecat', 'predicted timecat'))
 confusionMatrix(abs_test_tree$timecat, abs_boost_pred10)
 # boosted decision tree with 100 trials (not shown in text)
-abs_boost100 <- C5.0(abs_train_tree[-14], abs_train_tree$timecat,
+abs_boost100 <- C5.0(abs_train_tree[-16], abs_train_tree$timecat,
                         trials = 100)
 abs_boost_pred100 <- predict(abs_boost100, abs_test_tree)
 CrossTable(abs_test_tree$timecat, abs_boost_pred100,
@@ -311,7 +310,7 @@ error_cost <- matrix(c(0, 1, 4, 0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,
 error_cost
 
 # apply the cost matrix to the tree  "Reason for absence" accounts for 62% accurancy, it's the most important factor when estimating how long you will be absent. Don't do classfication, do prediction. 
-abs_cost <- C5.0(abs_train_tree[-14], abs_train_tree$timecat,
+abs_cost <- C5.0(abs_train_tree[-16], abs_train_tree$timecat,
                           costs = error_cost)
 abs_cost_pred <- predict(abs_cost, abs_test_tree)
 
