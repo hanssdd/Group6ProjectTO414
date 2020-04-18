@@ -49,7 +49,6 @@ absent$is_Thur<-if_else(absent$Day.of.the.week==5,1,0)
 absent$Day.of.the.week<-NULL
 absent$is_Seas4<-if_else(absent$Seasons==4,1,0)
 absent$Seasons<-NULL
-# absent$is_Educ3<-if_else(absent$Education==3,1,0) Once I do this, Seasons and Education3 no longer significant
 absent$Education<-NULL
 absent$Transportation.expense<-NULL
 absent$Social.drinker<-NULL
@@ -58,12 +57,6 @@ absent$Disciplinary.failure<-NULL
 
 # Linear Model
 ```{r}
-lm.model <- lm(Absenteeism.time.in.hours ~., data=absent)
-stepmodel <- step(lm.model, direction = "forward")
-summary(stepmodel)
-
-
-##What is the difference between the two?
 lm1 <-lm(Absenteeism.time.in.hours ~.,data=absent) %>% stepAIC(trace = FALSE, direction = "forward")
 summary(lm1)
 
@@ -110,7 +103,6 @@ Weight, Height, Body mass index:We expected a healthy body would save people fro
 # Data Cleaning again, randomizing and normalizing data
 ```{r}
 ##Building categories
-absent$ID <-NULL
 absent$timecat <- absent$Absenteeism.time.in.hours
 absent$timecat <- ifelse(absent$timecat <= 7, "less.than.day", ifelse (absent$timecat<=35, "less.than.one.week", "more.than.one.week"))
 more<-subset(absent, absent$timecat=="more.than.one.week")
@@ -124,7 +116,7 @@ set.seed(65)
 absent_r<-absent[sample(nrow(absent)),]
 
 ##Turning factors into binary
-absent_mm <- as.data.frame(model.matrix(~ . -1, absent_r[-14])) ##Breaking factors into dummy variables
+absent_mm <- as.data.frame(model.matrix(~ . -1, absent_r[-14])) 
 
 
 normalize <- function(x) {
@@ -135,22 +127,22 @@ normalize <- function(x) {
 absent_n <- as.data.frame(lapply(absent_mm, normalize))
 ```
 
-# Classfication
+# Classification
 
 ##KNN Model
 ```{r}
 ##Getting my own absent from the above
 absent_SP <- cbind(absent_n, absent$timecat)
-set.seed(888888)
+
 ##Rebulding the test and train data
-abs_train <- absent_SP[1:728, -43]
-abs_test <- absent_SP[729:828,-43]
-abs_train_label <- absent_SP[1:728, 43]
-abs_test_label <- absent_SP[729:828,43]
+abs_train <- absent_SP[1:728, -41]
+abs_test <- absent_SP[729:828,-41]
+abs_train_label <- absent_SP[1:728, 41]
+abs_test_label <- absent_SP[729:828,41]
 
 ##building KNN model
 KNN_MODEL <- knn(train = abs_train, test = abs_test,
-                      cl = abs_train_label, k=10)
+                      cl = abs_train_label, k=20)
 
 confusionMatrix(as.factor(KNN_MODEL),as.factor(abs_test_label))
 ```
@@ -161,12 +153,11 @@ confusionMatrix(as.factor(KNN_MODEL),as.factor(abs_test_label))
 absam<-absent_SP
 #View(absam)
 catint<-class.ind(as.factor(absam$`absent$timecat`))
-train<-cbind(absam[,-43],catint)
-train<-train[,-42]
-train<-train[,-41]
+train<-cbind(absam[,-41],catint)
+
 n<-names(train)
 f <- as.formula(paste("less.than.day + less.than.one.week + more.than.one.week ~", paste(n[!n %in% c("less.than.day", "less.than.one.week", "more.than.one.week" )], collapse = " + ")))
-f
+
 
 library(neuralnet)
 nn <- neuralnet(f,
@@ -184,7 +175,7 @@ pr.nn <- compute(nn, train[, 1:40])
 
 # Extract results
 pr.nn_ <- pr.nn$net.result
-#pr.nn_
+
 
 
 original_values <- max.col(train[, 41:43]) #takes column number with the maximum value
@@ -212,10 +203,9 @@ abs_test_tree  <- absent_r[729:828, ]
 prop.table(table(abs_train_tree$timecat))
 prop.table(table(abs_test_tree$timecat))
 
-## Step 3: Training a model on the data ----
 # build the simplest decision tree
 library(C50)
-abs_model <- C5.0(abs_train_tree[-15], abs_train_tree$timecat)
+abs_model <- C5.0(abs_train_tree[-14], abs_train_tree$timecat)
 
 # display simple facts about the tree
 abs_model
@@ -242,9 +232,8 @@ confusionMatrix(abs_test_tree$timecat, abs_pred)
 ```{r}
 ## Boosting the accuracy of decision trees
 # boosted decision tree with 10 trials
-abs_boost10 <- C5.0(abs_train_tree[-15], abs_train_tree$timecat,
+abs_boost10 <- C5.0(abs_train_tree[-14], abs_train_tree$timecat,
                        trials = 10)
-abs_boost10
 summary(abs_boost10)
 plot(abs_boost10)
 abs_boost_pred10 <- predict(abs_boost10, abs_test_tree)
@@ -252,22 +241,29 @@ CrossTable(abs_test_tree$timecat, abs_boost_pred10,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual timecat', 'predicted timecat'))
 confusionMatrix(abs_test_tree$timecat, abs_boost_pred10)
+```
+
+
+```{r}
 # boosted decision tree with 100 trials (not shown in text)
-abs_boost100 <- C5.0(abs_train_tree[-15], abs_train_tree$timecat,
+abs_boost100 <- C5.0(abs_train_tree[-14], abs_train_tree$timecat,
                         trials = 100)
 abs_boost_pred100 <- predict(abs_boost100, abs_test_tree)
 CrossTable(abs_test_tree$timecat, abs_boost_pred100,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual default', 'predicted default'))
 confusionMatrix(abs_test_tree$timecat, abs_boost_pred100)
-plot(abs_boost100)
+```
+
+
+```{r}
 ## Making some mistakes more costly than others
 # create a cost matrix
 error_cost <- matrix(c(0, 5, 5, 5,0,5,5,5,0), nrow = 3)
-error_cost
+
 
 # apply the cost matrix to the tree  "Reason for absence" accounts for 62% accurancy, it's the most important factor when estimating how long you will be absent. Don't do classfication, do prediction. 
-abs_cost <- C5.0(abs_train_tree[-15
+abs_cost <- C5.0(abs_train_tree[-14
                                 ], abs_train_tree$timecat,
                           costs = error_cost)
 abs_cost_pred <- predict(abs_cost, abs_test_tree)
@@ -276,8 +272,10 @@ CrossTable(abs_test_tree$timecat, abs_cost_pred,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual default', 'predicted default'))
 confusionMatrix(abs_test_tree$timecat,abs_cost_pred)
-plot(abs_cost)
+
 ```
+
+Best model was boost 100
 
 ## KSVM Model
 ```{r}
@@ -288,16 +286,14 @@ ksvm_model1 <- ksvm(timecat~ ., data = abs_train_tree,
 # look at basic information about the model
 ksvm_model1
 
-## Step 3: Evaluating model performance 
 # predictions on testing dataset
 ksvm_predictions <- predict(ksvm_model1, abs_test_tree)
 ksvm_predictions <- as.factor(ksvm_predictions)
-head(ksvm_predictions)
 confusionMatrix(ksvm_predictions,abs_test_tree$timecat)
 
 ```
 ```{r}
-## Step 4: Improving model performance
+## Trying a different kernel
 ksvm_model_rbf <- ksvm(timecat~ ., data = abs_train_tree, kernel = "rbfdot")
 ksvm_predictions_rbf <- predict(ksvm_model_rbf, abs_test_tree)
 ksvm_predictions2 <- predict(ksvm_model_rbf, abs_test_tree)
@@ -306,34 +302,25 @@ confusionMatrix(ksvm_predictions2,abs_test_tree$timecat)
 
 ```
 
-##KSVM Model
-```{r}
-setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
-absent <-read.csv("Absenteeism_at_work.csv")
-str(absent)
-```
+
+# SVM Model
 
 ```{r}
-##Converting into factors
-#absent$ï..ID<- as.factor(absent$ï..ID)
-absent$timecat <- as.factor(absent$timecat)
-```
 
-```{r}
 n <- nrow(absent)  # Number of observations
 ntrain <- round(n*0.75)  # 75% for training set
 set.seed(314)    # Set seed for reproducible results
 tindex <- sample(n, ntrain)   # Create a random index
-train_absent <- abs_rand[tindex,]   # Create training set
-test_absent <- abs_rand[-tindex,]   # Create test set
+train_absent <- absent_r[tindex,]   # Create training set
+test_absent <- absent_r[-tindex,]   # Create test set
+
+
 ## Construct SVM Model
 library(e1071)
 svm1 <- svm(timecat~., data=absent, 
           method="C-classification", kernal="vanilladot", 
           gamma=0.1, cost=10)
-summary(svm1)
-```
-```{r}
+
 ## Making Predictions
 prediction <- predict(svm1, test_absent)
 ## Display confusion matrix
@@ -341,6 +328,11 @@ library(caret)
 xtab <- confusionMatrix(as.factor(test_absent$timecat), as.factor(prediction))
 xtab
 ```
+
+
+
+
+
 
 # Prediction 
 ## ANN model
