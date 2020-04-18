@@ -1,0 +1,91 @@
+---
+title: "Project 3 New Data"
+author: "Samantha Tinor"
+date: "4/18/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+---
+title: "Project 3 New Data"
+author: "Samantha Tinor"
+date: "4/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(caret)
+library(MASS)
+library(BART)
+library(kernlab)
+library(class)
+
+absent <-read.csv("Absenteeism_at_work2.csv")
+```
+
+# Cleaning Data & Other Prep Work
+```{r}
+absent$Reason.for.absence <- as.factor(absent$Reason.for.absence)
+absent$Month.of.absence <- as.factor(absent$Month.of.absence)
+absent$Day.of.the.week <- as.factor(absent$Day.of.the.week)
+absent$Seasons <- as.factor(absent$Season)
+absent$Disciplinary.failure <-as.factor(absent$Disciplinary.failure)
+absent$Education <- as.factor(absent$Education)
+absent$Social.drinker <-as.factor(absent$Social.drinker)
+absent$Social.smoker <-as.factor(absent$Social.smoker)
+absent$ï..ID  <- NULL
+absent$Work.load.Average.day<-as.numeric(absent$Work.load.Average.day)
+absent$Month.of.absence<- NULL
+absent$Weight<- NULL
+absent$is_Thur<-if_else(absent$Day.of.the.week==5,1,0)
+absent$Day.of.the.week<-NULL
+absent$is_Seas4<-if_else(absent$Seasons==4,1,0)
+absent$Seasons<-NULL
+absent$Transportation.expense<-NULL
+absent$Social.drinker<-NULL
+absent$Disciplinary.failure<-NULL
+
+
+lm.model <- lm( Absenteeism.time.in.hours ~., data=absent)
+```
+
+# Dividing Absent hours into categories
+```{r}
+absent$timecat <- absent$Absenteeism.time.in.hours
+absent$timecat <- ifelse(absent$timecat == 0, "not.absent", ifelse (absent$timecat<56, "less.than.week","more.than.week"))
+absent$timecat <- as.factor(absent$timecat)
+absent$Absenteeism.time.in.hours <- NULL
+```
+
+# Randomize, Standardize and Normalize
+```{r}
+#Randomizing the data
+set.seed(65)
+absent_r<-absent[sample(nrow(absent)),]
+absent_r
+#Turning factors into binary
+absent_mm <- as.data.frame(model.matrix(~ . -1, absent_r[-15])) 
+normalize <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x)))
+}
+
+#Normalizing every variable except output
+absent_n <- as.data.frame(lapply(absent_mm, normalize))
+
+#Normalized data with normalized output
+absent_n_output<-cbind(class.ind(as.factor(absent$timecat)),absent_n)
+
+```
+
+
+
