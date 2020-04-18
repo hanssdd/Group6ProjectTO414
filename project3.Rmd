@@ -30,7 +30,7 @@ absent <-read.csv("Absenteeism_at_work2.csv")
 ```
 
 ```{r}
-##Converting into factors
+##Converting into factors 
 #absent$ï..ID<- as.factor(absent$ï..ID)
 absent$Reason.for.absence <- as.factor(absent$Reason.for.absence)
 absent$Month.of.absence <- as.factor(absent$Month.of.absence)
