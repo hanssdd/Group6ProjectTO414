@@ -24,7 +24,7 @@ library(class)
 
 # Data Import and Data Cleaning
 ```{r}
-#setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
+setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
 absent <-read.csv("Absenteeism_at_work2.csv")
 
 ```
@@ -49,10 +49,10 @@ absent$is_Thur<-if_else(absent$Day.of.the.week==5,1,0)
 absent$Day.of.the.week<-NULL
 absent$is_Seas4<-if_else(absent$Seasons==4,1,0)
 absent$Seasons<-NULL
-#absent$is_Educ3<-if_else(absent$Education==3,1,0) Once I do this, Seasons and Education3 no longer significant
-#absent$Education<-NULL
+# absent$is_Educ3<-if_else(absent$Education==3,1,0) Once I do this, Seasons and Education3 no longer significant
+absent$Education<-NULL
 absent$Transportation.expense<-NULL
-#absent$Social.drinker<-NULL
+absent$Social.drinker<-NULL
 absent$Disciplinary.failure<-NULL
 ```
 
@@ -112,8 +112,9 @@ Weight, Height, Body mass index:We expected a healthy body would save people fro
 ##Building categories
 absent$ID <-NULL
 absent$timecat <- absent$Absenteeism.time.in.hours
-absent$timecat <- ifelse(absent$timecat == 0, "not.absent", ifelse (absent$timecat<=56, "one.week", "more.than.one.week"))
-          
+absent$timecat <- ifelse(absent$timecat <= 7, "less.than.day", ifelse (absent$timecat<=35, "less.than.one.week", "more.than.one.week"))
+more<-subset(absent, absent$timecat=="more.than.one.week")
+absent <- rbind(absent,more,more,more,more)          
 absent$timecat <- as.factor(absent$timecat)
 absent$Absenteeism.time.in.hours <- NULL
 
@@ -123,7 +124,7 @@ set.seed(65)
 absent_r<-absent[sample(nrow(absent)),]
 
 ##Turning factors into binary
-absent_mm <- as.data.frame(model.matrix(~ . -1, absent_r[-15])) ##Breaking factors into dummy variables
+absent_mm <- as.data.frame(model.matrix(~ . -1, absent_r[-14])) ##Breaking factors into dummy variables
 
 
 normalize <- function(x) {
@@ -140,16 +141,16 @@ absent_n <- as.data.frame(lapply(absent_mm, normalize))
 ```{r}
 ##Getting my own absent from the above
 absent_SP <- cbind(absent_n, absent$timecat)
-
+set.seed(888888)
 ##Rebulding the test and train data
-abs_train <- absent_SP[1:540, -44]
-abs_test <- absent_SP[541:740,-44]
-abs_train_label <- absent_SP[1:540, 44]
-abs_test_label <- absent_SP[541:740,44]
+abs_train <- absent_SP[1:728, -43]
+abs_test <- absent_SP[729:828,-43]
+abs_train_label <- absent_SP[1:728, 43]
+abs_test_label <- absent_SP[729:828,43]
 
 ##building KNN model
 KNN_MODEL <- knn(train = abs_train, test = abs_test,
-                      cl = abs_train_label, k=20)
+                      cl = abs_train_label, k=10)
 
 confusionMatrix(as.factor(KNN_MODEL),as.factor(abs_test_label))
 ```
@@ -158,33 +159,35 @@ confusionMatrix(as.factor(KNN_MODEL),as.factor(abs_test_label))
 ## ANN Model
 ```{r}
 absam<-absent_SP
-View(absam)
+#View(absam)
 catint<-class.ind(as.factor(absam$`absent$timecat`))
-train<-cbind(absam[,-44],catint)
-
-
+train<-cbind(absam[,-43],catint)
+train<-train[,-42]
+train<-train[,-41]
 n<-names(train)
-f<-f <- as.formula(paste("not.absent + one.week + more.than.one.week ~", paste(n[!n %in% c("not.absent", "one.week", "more.than.one.week" )], collapse = " + ")))
+f <- as.formula(paste("less.than.day + less.than.one.week + more.than.one.week ~", paste(n[!n %in% c("less.than.day", "less.than.one.week", "more.than.one.week" )], collapse = " + ")))
 f
 
 library(neuralnet)
 nn <- neuralnet(f,
                 data = train,
-                hidden = 3,
+                hidden = c(8,5,2),
+                rep = 3,
                 act.fct = "logistic",
                 linear.output = FALSE,
-                lifesign = "minimal")
+                lifesign = "minimal",
+                threshold = 0.5)
 
-plot(nn)
+#plot(nn)
 
-pr.nn <- compute(nn, train[, 1:43])
+pr.nn <- compute(nn, train[, 1:40])
 
 # Extract results
 pr.nn_ <- pr.nn$net.result
-pr.nn_
+#pr.nn_
 
 
-original_values <- max.col(train[, 44:49]) #takes column number with the maximum value
+original_values <- max.col(train[, 41:43]) #takes column number with the maximum value
 
 pr.nn_2 <- max.col(pr.nn_)
 mean(pr.nn_2 == original_values)
@@ -201,9 +204,9 @@ set.seed(12345)
 
 
 # split the data frames
-abs_rand$timecat<-as.factor(abs_rand$timecat)
-abs_train_tree <- abs_rand[1:640, ]
-abs_test_tree  <- abs_rand[641:740, ]
+absent_r$timecat<-as.factor(absent_r$timecat)
+abs_train_tree <- absent_r[1:728, ]
+abs_test_tree  <- absent_r[729:828, ]
 
 # check the proportion of class variable
 prop.table(table(abs_train_tree$timecat))
@@ -260,11 +263,12 @@ confusionMatrix(abs_test_tree$timecat, abs_boost_pred100)
 plot(abs_boost100)
 ## Making some mistakes more costly than others
 # create a cost matrix
-error_cost <- matrix(c(0, 1, 4, 0,1,4,0,1,4), nrow = 3)
+error_cost <- matrix(c(0, 5, 5, 5,0,5,5,5,0), nrow = 3)
 error_cost
 
 # apply the cost matrix to the tree  "Reason for absence" accounts for 62% accurancy, it's the most important factor when estimating how long you will be absent. Don't do classfication, do prediction. 
-abs_cost <- C5.0(abs_train_tree[-15], abs_train_tree$timecat,
+abs_cost <- C5.0(abs_train_tree[-15
+                                ], abs_train_tree$timecat,
                           costs = error_cost)
 abs_cost_pred <- predict(abs_cost, abs_test_tree)
 
