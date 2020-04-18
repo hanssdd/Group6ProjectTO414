@@ -2,7 +2,14 @@
 title: "Project3"
 author: "Group 6"
 date: "4/2/2020"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapse: false
+    number_sections: true
+    theme: cerulean
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -15,9 +22,10 @@ library(kernlab)
 library(class)
 ```
 
-
+# Data Import and Data Cleaning
 ```{r}
-absent <-read.csv("Absenteeism_at_work2.csv")
+setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
+absent <-read.csv("Absenteeism_at_work.csv")
 str(absent)
 ```
 
@@ -47,6 +55,7 @@ absent$Social.drinker<-NULL
 absent$Disciplinary.failure<-NULL
 ```
 
+# Linear Model
 ```{r}
 lm.model <- lm( Absenteeism.time.in.hours ~., data=absent)
 stepmodel <- step(lm.model, direction = "forward")
@@ -57,7 +66,7 @@ summary(lm1)
 # ANN/Decision tree/Logistic Rminer?
 ```
 
-# ANN/Decision tree/Logistic Rminer?
+## Intuition and Explanation on significant factors
 Reason for absense: Overall reasons for absence are significant, but some reasons have more of impact than others. I guess that's because some reasons are commonplace or popular while others are more personal and not widely used.
 
 Month of absence:It is not a significant factor, however by common sense, we would expect people to take more leaves during holiday season,such as Christams and New Year Holiday,and take less leaves after that, which is the first quarter of the year.
@@ -92,12 +101,12 @@ Pet:We expected it to be similar to "Son", however the relationship is negative.
 Weight, Height, Body mass index:We expected a healthy body would save people from taking sick leaves. Weight and height are very insignificant since people with different heights have different healthy weights. BMI index is also significant since a good BMI is between 18.5-24.9——neither a too high or too low BMI index is good.
 
 
-Preparing the data
+# Data Cleaning again, randomizing and normalizing data
 ```{r}
 ##Building categories
 absent$ID <-NULL
 absent$timecat <- absent$Absenteeism.time.in.hours
-absent$timecat <- ifelse(absent$timecat == 0, "not.absent", ifelse (absent$timecat>0 & absent$timecat<8, "less.than.day", ifelse(absent$timecat>=8 & absent$timecat<=32, "one.to.four.days", ifelse(absent$timecat>32 & absent$timecat<=56, "one.week", ifelse(absent$timecat>56 & absent$timecat<=96, "two.week", "three.week")))))
+absent$timecat <- ifelse(absent$timecat == 0, "not.absent", ifelse (absent$timecat<=56, "one.week", "more.than.one.week"))
           
 absent$timecat <- as.factor(absent$timecat)
 absent$Absenteeism.time.in.hours <- NULL
@@ -117,10 +126,9 @@ normalize <- function(x) {
 
 ##Normalizing every variable except output
 absent_n <- as.data.frame(lapply(absent_mm, normalize))
-
-
 ```
 
+# Classfication
 ##KNN Model
 ```{r}
 ##Getting my own absent from the above
@@ -134,22 +142,19 @@ abs_test_label <- absent_SP[541:740,44]
 
 ##building KNN model
 KNN_MODEL <- knn(train = abs_train, test = abs_test,
-                      cl = abs_train_label, k=40)
+                      cl = abs_train_label, k=20)
 
 confusionMatrix(as.factor(KNN_MODEL),as.factor(abs_test_label))
 ```
 
 
 ## ANN Model
-```{r}
 
+```{r}
 #Dividing response variable into categories 
-absent$timecat <- absent$Absenteeism.time.in.hours
-absent$timecat <- ifelse(absent$timecat == 0, "not.absent", ifelse (absent$timecat>0 & absent$timecat<8, "less.than.day", ifelse(absent$timecat>=8 & absent$timecat<=32, "one.to.four.days", ifelse(absent$timecat>32 & absent$timecat<=56, "one.week", ifelse(absent$timecat>56 & absent$timecat<=96, "two.week", "three.week")))))
-          
 #absent$timecat <- as.factor(absent$timecat)
 absent2 <- absent #creating an alternate data set for classification models 
-absent2$Absenteeism.time.in.hours <- NULL
+#absent2$Absenteeism.time.in.hours <- NULL
 ##Randomizing the data
 set.seed(65)
 abs_rand<-absent2[sample(nrow(absent)),]
@@ -171,7 +176,7 @@ abs_test <- absent2[541:740, ]
 #Setting up the necessary packages for the ANN model
 library(neuralnet)
 #Modelling ANN
-abs_model <- neuralnet(formula= less.than.day + not.absent + one.to.four.days + one.week + two.week + three.week ~ ., data=abs_train, hidden = 5, threshold = 0.5)
+abs_model <- neuralnet(formula= not.absent + one.week + more.than.one.week ~ ., data=abs_train, hidden = 5, threshold = 0.5)
 plot(abs_model)
 model_results <- compute(abs_model, abs_test[1:42,])
 pred_strength <- model_results$net.result
@@ -228,13 +233,7 @@ abs_test$pred <- classes[max.col(test_pred)]
 confusionMatrix(as.factor(abs_test$pred), as.factor(absent2$timecat[541:740]))
 ```
 
-
-
-
-
-
-
-#Decision Tree
+## Decision Tree
 ```{r}
 ## Understanding Decision Trees ----
 
@@ -259,7 +258,7 @@ prop.table(table(abs_test_tree$timecat))
 ## Step 3: Training a model on the data ----
 # build the simplest decision tree
 library(C50)
-abs_model <- C5.0(abs_train_tree[-16], abs_train_tree$timecat)
+abs_model <- C5.0(abs_train_tree[-15], abs_train_tree$timecat)
 
 # display simple facts about the tree
 abs_model
@@ -267,10 +266,8 @@ abs_model
 # display detailed information about the tree
 summary(abs_model)
 
-#plot(abs_model)
-
-#mod1 <- C5.0(Species ~ ., data = iris)
-#plot(mod1)
+plot(abs_model)
+#Reason6: Disease for circulatory system
 
 ## Step 4: Evaluating model performance ----
 # create a factor vector of predictions on test data
@@ -281,11 +278,14 @@ library(gmodels)
 CrossTable(abs_test_tree$timecat, abs_pred,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual timecat', 'predicted timecat'))
+confusionMatrix(abs_test_tree$timecat, abs_pred)
 ## Step 5: Improving model performance ----
+```
 
+```{r}
 ## Boosting the accuracy of decision trees
 # boosted decision tree with 10 trials
-abs_boost10 <- C5.0(abs_train_tree[-16], abs_train_tree$timecat,
+abs_boost10 <- C5.0(abs_train_tree[-15], abs_train_tree$timecat,
                        trials = 10)
 abs_boost10
 summary(abs_boost10)
@@ -296,7 +296,7 @@ CrossTable(abs_test_tree$timecat, abs_boost_pred10,
            dnn = c('actual timecat', 'predicted timecat'))
 confusionMatrix(abs_test_tree$timecat, abs_boost_pred10)
 # boosted decision tree with 100 trials (not shown in text)
-abs_boost100 <- C5.0(abs_train_tree[-16], abs_train_tree$timecat,
+abs_boost100 <- C5.0(abs_train_tree[-15], abs_train_tree$timecat,
                         trials = 100)
 abs_boost_pred100 <- predict(abs_boost100, abs_test_tree)
 CrossTable(abs_test_tree$timecat, abs_boost_pred100,
@@ -306,11 +306,11 @@ confusionMatrix(abs_test_tree$timecat, abs_boost_pred100)
 plot(abs_boost100)
 ## Making some mistakes more costly than others
 # create a cost matrix
-error_cost <- matrix(c(0, 1, 4, 0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0,0,1,4,0), nrow = 6)
+error_cost <- matrix(c(0, 1, 4, 0,1,4,0,1,4), nrow = 3)
 error_cost
 
 # apply the cost matrix to the tree  "Reason for absence" accounts for 62% accurancy, it's the most important factor when estimating how long you will be absent. Don't do classfication, do prediction. 
-abs_cost <- C5.0(abs_train_tree[-16], abs_train_tree$timecat,
+abs_cost <- C5.0(abs_train_tree[-15], abs_train_tree$timecat,
                           costs = error_cost)
 abs_cost_pred <- predict(abs_cost, abs_test_tree)
 
@@ -321,10 +321,36 @@ confusionMatrix(abs_test_tree$timecat,abs_cost_pred)
 plot(abs_cost)
 ```
 
-
-#KSVM Model
+## KSVM Model
 ```{r}
-absent <-read.csv("Absenteeism_at_work2.csv")
+library(kernlab)
+ksvm_model1 <- ksvm(timecat~ ., data = abs_train_tree,
+                          kernel = "vanilladot")
+
+# look at basic information about the model
+ksvm_model1
+
+## Step 3: Evaluating model performance 
+# predictions on testing dataset
+ksvm_predictions <- predict(ksvm_model1, abs_test_tree)
+ksvm_predictions <- as.factor(ksvm_predictions)
+head(ksvm_predictions)
+confusionMatrix(ksvm_predictions,abs_test_tree$timecat)
+
+```
+```{r}
+## Step 4: Improving model performance
+ksvm_model_rbf <- ksvm(timecat~ ., data = abs_train_tree, kernel = "rbfdot")
+ksvm_predictions_rbf <- predict(ksvm_model_rbf, abs_test_tree)
+ksvm_predictions2 <- predict(ksvm_model_rbf, abs_test_tree)
+ksvm_predictions2 <- as.factor(ksvm_predictions2)
+confusionMatrix(ksvm_predictions2,abs_test_tree$timecat)
+
+```
+##KSVM Model
+```{r}
+setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
+absent <-read.csv("Absenteeism_at_work.csv")
 str(absent)
 ```
 
@@ -339,8 +365,8 @@ n <- nrow(absent)  # Number of observations
 ntrain <- round(n*0.75)  # 75% for training set
 set.seed(314)    # Set seed for reproducible results
 tindex <- sample(n, ntrain)   # Create a random index
-train_absent <- absent[tindex,]   # Create training set
-test_absent <- absent[-tindex,]   # Create test set
+train_absent <- abs_rand[tindex,]   # Create training set
+test_absent <- abs_rand[-tindex,]   # Create test set
 ## Construct SVM Model
 library(e1071)
 svm1 <- svm(timecat~., data=absent, 
@@ -356,3 +382,78 @@ library(caret)
 xtab <- confusionMatrix(as.factor(test_absent$timecat), as.factor(prediction))
 xtab
 ```
+
+# Prediction 
+## ANN model
+```{r}
+setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
+absentANN <-read.csv("Absenteeism_at_work.csv")
+str(absentANN)
+#absentANN$Reason.for.absence <- as.factor(absentANN$Reason.for.absence)
+#absentANN$Month.of.absence <- as.factor(absentANN$Month.of.absence)
+#absentANN$Day.of.the.week <- as.factor(absentANN$Day.of.the.week)
+#absentANN$Seasons <- as.factor(absentANN$Season)
+absentANN$Disciplinary.failure <-as.factor(absentANN$Disciplinary.failure)
+#absentANN$Education <- as.factor(absentANN$Education)
+#absentANN$Social.drinker <-as.factor(absentANN$Social.drinker)
+#absentANN$Social.smoker <-as.factor(absentANN$Social.smoker)
+absentANN$ï..ID  <- NULL
+absentANN$Work.load.Average.day<-as.numeric(absentANN$Work.load.Average.day)
+absentANN$Month.of.absence<- NULL
+absentANN$Weight<- NULL
+absentANN$is_Thur<-if_else(absentANN$Day.of.the.week==5,1,0)
+absentANN$Day.of.the.week<-NULL
+absentANN$is_Seas4<-if_else(absentANN$Seasons==4,1,0)
+absentANN$Seasons<-NULL
+#absent$is_Educ3<-if_else(absent$Education==3,1,0) Once I do this, Seasons and Education3 no longer significant
+#absent$Education<-NULL
+absentANN$Transportation.expense<-NULL
+absentANN$Social.drinker<-NULL
+absentANN$Disciplinary.failure<-NULL
+# apply normalization to entire data frame
+absent_ANN <- as.data.frame(lapply(absentANN, normalize))
+
+# confirm that the range is now between zero and one
+summary(absent_ANN$Absenteeism.time.in.hours)
+
+# compared to the original minimum and maximum
+summary(absentANN$Absenteeism.time.in.hours)
+
+# create training and test data
+absent_ANN_train <- absent_ANN[1:540, ]
+absent_ANN_test <- absent_ANN[541:740, ]
+
+## Step 3: Training a model on the data ----
+# train the neuralnet model
+library(neuralnet)
+
+# simple ANN with only a single hidden neuron
+ANN_model <- neuralnet(Absenteeism.time.in.hours~.,
+                              data = absent_ANN)
+
+
+# visualize the network topology
+plot(ANN_model)
+
+## Step 4: Evaluating model performance ----
+# obtain model results
+model_results <- compute(ANN_model, absent_ANN_test)
+# obtain predicted strength values
+predicted_strength <- model_results$net.result
+# examine the correlation between predicted and actual values
+cor(predicted_strength, absent_ANN_test$Absenteeism.time.in.hours)
+
+## Step 5: Improving model performance ----
+# a more complex neural network topology with  hidden neurons
+ANN_model2 <- neuralnet(Absenteeism.time.in.hours ~ ., data=absent_ANN,hidden = 15)
+
+# plot the network
+#plot(ANN_model2)
+# evaluate the results as we did before
+model_results2 <- compute(ANN_model2, absent_ANN_test)
+predicted_strength2 <- model_results2$net.result
+cor(predicted_strength2, absent_ANN_test$Absenteeism.time.in.hours)
+
+
+```
+With 15 neurons, we get a pretty high accruacy, ~85%.
