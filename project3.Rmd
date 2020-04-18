@@ -26,7 +26,7 @@ library(class)
 ```{r}
 setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
 absent <-read.csv("Absenteeism_at_work.csv")
-str(absent)
+
 ```
 
 ```{r}
@@ -63,7 +63,6 @@ summary(stepmodel)
 
 lm1 <-lm(Absenteeism.time.in.hours ~.,data=absent) %>% stepAIC(trace = FALSE, direction = "forward")
 summary(lm1)
-# ANN/Decision tree/Logistic Rminer?
 ```
 
 ## Intuition and Explanation on significant factors
@@ -129,6 +128,7 @@ absent_n <- as.data.frame(lapply(absent_mm, normalize))
 ```
 
 # Classfication
+
 ##KNN Model
 ```{r}
 ##Getting my own absent from the above
@@ -149,100 +149,45 @@ confusionMatrix(as.factor(KNN_MODEL),as.factor(abs_test_label))
 
 
 ## ANN Model
-
 ```{r}
-#Dividing response variable into categories 
-#absent$timecat <- as.factor(absent$timecat)
-absent2 <- absent #creating an alternate data set for classification models 
-#absent2$Absenteeism.time.in.hours <- NULL
-##Randomizing the data
-set.seed(65)
-abs_rand<-absent2[sample(nrow(absent)),]
-##Turning factors into binary
-abs_mm <- as.data.frame(model.matrix(~ . -1, abs_rand[-15])) ##Breaking factors into dummy variables
-normalize <- function(x) {
-  return ((x - min(x)) / (max(x) - min(x)))
-}
-##Normalizing every variable except output
-abs_norm <- as.data.frame(lapply(abs_mm, normalize))
-absent2 <- cbind(abs_norm, class.ind(absent2$timecat))
-```
+absam<-absent_SP
+View(absam)
+catint<-class.ind(as.factor(absam$`absent$timecat`))
+train<-cbind(absam[,-44],catint)
 
-```{r}
-#Separating data into test and train data
-library(nnet)
-abs_train <- absent2[1:540, ]
-abs_test <- absent2[541:740, ]
-#Setting up the necessary packages for the ANN model
+
+n<-names(train)
+f<-f <- as.formula(paste("not.absent + one.week + more.than.one.week ~", paste(n[!n %in% c("not.absent", "one.week", "more.than.one.week" )], collapse = " + ")))
+f
+
 library(neuralnet)
-#Modelling ANN
-abs_model <- neuralnet(formula= not.absent + one.week + more.than.one.week ~ ., data=abs_train, hidden = 5, threshold = 0.5)
-plot(abs_model)
-model_results <- compute(abs_model, abs_test[1:42,])
-pred_strength <- model_results$net.result
-summary(pred_strength)
-library(caret)
-#so now each of the six outputs have to be converted to a binary result but i'm not sure how to interpret these results and determine a threshold to make a result 0 or 1 pls help!
-```
+nn <- neuralnet(f,
+                data = train,
+                hidden = 3,
+                act.fct = "logistic",
+                linear.output = FALSE,
+                lifesign = "minimal")
 
-```{r}
-## extract classes
-classes <- levels(absent$timecat)
+plot(nn)
 
-######################################################################
-# define softmax mapping                                             #
-#  Defn: softmax                                                     #
-#     g(k) := e^{x_k}/sum_{i = 1}^{n} (e^{x_i})                      #
-#  Purpose of softmax is to normalize prediction output of ANN       #
-#  to a probability scale                                            #
-######################################################################
-test_pred<- as.data.frame(pred_strength)
-test_pred <- exp(test_pred)
-test_pred$sum <- rowSums(test_pred)
-test_pred <- test_pred/test_pred$sum
-test_pred$sum <- NULL
+pr.nn <- compute(nn, train[, 1:43])
 
-## make prediction
-abs_test$pred <- classes[max.col(test_pred)]
-## Confusion matrix
-confusionMatrix(as.factor(abs_test$pred), as.factor(absent$timecat[541:740]))
-```
+# Extract results
+pr.nn_ <- pr.nn$net.result
+pr.nn_
 
-```{r}
-View(abs_model)
-## extract classes
-classes <- levels(absent$timecat)
 
-######################################################################
-# define softmax mapping                                             #
-#  Defn: softmax                                                     #
-#     g(k) := e^{x_k}/sum_{i = 1}^{n} (e^{x_i})                      #
-#  Purpose of softmax is to normalize prediction output of ANN       #
-#  to a probability scale                                            #
-######################################################################
-test_pred<- as.data.frame(pred_strength)
-test_pred <- exp(test_pred)
-test_pred$sum <- rowSums(test_pred)
-test_pred <- test_pred/test_pred$sum
-test_pred$sum <- NULL
+original_values <- max.col(train[, 44:49]) #takes column number with the maximum value
 
-## make prediction
-abs_test$pred <- classes[max.col(test_pred)]
+pr.nn_2 <- max.col(pr.nn_)
+mean(pr.nn_2 == original_values)
 
-## Confusion matrix
-confusionMatrix(as.factor(abs_test$pred), as.factor(absent2$timecat[541:740]))
+
+confusionMatrix(as.factor(pr.nn_2),as.factor(original_values))
 ```
 
 ## Decision Tree
 ```{r}
-## Understanding Decision Trees ----
-
-
-## Example: Identifying Risky Bank Loans ----
-## Step 2: Exploring and preparing the data ----
-
-# create a random sample for training and test data
-# use set.seed to use the same random number sequence as the tutorial
 set.seed(12345)
 
 
@@ -269,7 +214,7 @@ summary(abs_model)
 plot(abs_model)
 #Reason6: Disease for circulatory system
 
-## Step 4: Evaluating model performance ----
+
 # create a factor vector of predictions on test data
 abs_pred <- predict(abs_model, abs_test_tree)
 
@@ -279,7 +224,7 @@ CrossTable(abs_test_tree$timecat, abs_pred,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual timecat', 'predicted timecat'))
 confusionMatrix(abs_test_tree$timecat, abs_pred)
-## Step 5: Improving model performance ----
+
 ```
 
 ```{r}
@@ -347,6 +292,7 @@ ksvm_predictions2 <- as.factor(ksvm_predictions2)
 confusionMatrix(ksvm_predictions2,abs_test_tree$timecat)
 
 ```
+
 ##KSVM Model
 ```{r}
 setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
