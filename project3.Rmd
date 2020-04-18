@@ -186,6 +186,8 @@ mean(pr.nn_2 == original_values)
 confusionMatrix(as.factor(pr.nn_2),as.factor(original_values))
 ```
 
+
+
 ## Decision Tree
 ```{r}
 set.seed(12345)
@@ -356,6 +358,8 @@ absentANN$Seasons<-NULL
 absentANN$Transportation.expense<-NULL
 absentANN$Social.drinker<-NULL
 absentANN$Disciplinary.failure<-NULL
+
+
 # apply normalization to entire data frame
 absent_ANN <- as.data.frame(lapply(absentANN, normalize))
 
