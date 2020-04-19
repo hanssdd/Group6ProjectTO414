@@ -514,12 +514,11 @@ summary(lm5)
 lm6 <- lm(Reason.for.absence13 ~ Distance.from.Residence.to.Work + Service.time+Age+Work.load.Average.day+Hit.target+Son+Social.smoker1+Pet+Height+Body.mass.index+is_Thur+is_Seas4 ,data=absent_reasons) %>% stepAIC(trace = FALSE , direction = "forward")
 summary(lm6)
 
-
 ```
 
 Interpretation:
 
-+ Diseases of the circulatory system go down as distance from work increases and also with increase in hitting the target. So if you are performing well and live farther away from your job, you are more less likely to have issues with circulatory system
++ Diseases of the circulatory system go down as distance from work increases and also with increase in hitting the target. So if you are performing well and live farther away from your job, you are less likely to have issues with circulatory system
 
 + Disease of the digestive system go up with both the increase in average work load and being a social smoker. So, it seems like work load affects peoples gut more than their heart!
 
