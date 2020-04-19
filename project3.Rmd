@@ -169,6 +169,7 @@ KNN_imp <- train(`absent$timecat` ~ ., data = absent_SP, method = "knn")
 KNN_imp
 KNN_predict <- predict(KNN_imp, absent_SP)
 confusionMatrix(KNN_predict,absent_SP$`absent$timecat`)
+
 ```
 
 Interpretation: We can see that the KNN accuracy is just 61% with Kappa being 23%. The low value might be because of the dimeensionality issue since the data set has a lot of variables, which reduces accuracy of models such as KNN. We can also see the highest sensitivity for less than a day, which forms the majority of the data while the other two categories having high specificity.
@@ -492,4 +493,37 @@ With 15 neurons, we get a pretty high accruacy, ~88%. From the result, we can co
 
 Based on Reasons for absence that an employee gives, where he/she lives, average social service time he/she spends every year,age,work load,and the day of the week/the month/the season when he/she askes for a leave, HR can predict how many hours an employee will be absent on the job, therefore it helps on makeing decisions on hiring employees,estimating new hire headcounts, altering healthcare plans,employee relocation, regulations and contract benefits.
 
+
+# Reason for absence
+```{r}
+absent_reasons <- absent_SP
+
+##Disease of the circulatory system
+lm3 <- lm(Reason.for.absence9 ~ Distance.from.Residence.to.Work + Service.time+Age+Work.load.Average.day+Hit.target+Son+Social.smoker1+Pet+Height+Body.mass.index+is_Thur+is_Seas4 ,data=absent_reasons) %>% stepAIC(trace = FALSE , direction = "forward")
+summary(lm3)
+
+##Disease of the digestive system
+lm4 <- lm(Reason.for.absence11 ~ Distance.from.Residence.to.Work + Service.time+Age+Work.load.Average.day+Hit.target+Son+Social.smoker1+Pet+Height+Body.mass.index+is_Thur+is_Seas4 ,data=absent_reasons) %>% stepAIC(trace = FALSE , direction = "forward")
+summary(lm4)
+
+##Disease of the skin tissue
+lm5 <- lm(Reason.for.absence12 ~ Distance.from.Residence.to.Work + Service.time+Age+Work.load.Average.day+Hit.target+Son+Social.smoker1+Pet+Height+Body.mass.index+is_Thur+is_Seas4 ,data=absent_reasons) %>% stepAIC(trace = FALSE , direction = "forward")
+summary(lm5)
+
+##Diseases of the musculoskeletal system and connective tissue (jointpain)
+lm6 <- lm(Reason.for.absence13 ~ Distance.from.Residence.to.Work + Service.time+Age+Work.load.Average.day+Hit.target+Son+Social.smoker1+Pet+Height+Body.mass.index+is_Thur+is_Seas4 ,data=absent_reasons) %>% stepAIC(trace = FALSE , direction = "forward")
+summary(lm6)
+
+
+```
+
+Interpretation:
+
++ Diseases of the circulatory system go down as distance from work increases and also with increase in hitting the target. So if you are performing well and live farther away from your job, you are more less likely to have issues with circulatory system
+
++ Disease of the digestive system go up with both the increase in average work load and being a social smoker. So, it seems like work load affects peoples gut more than their heart!
+
++ Skin related diseases go up with age and having pets but go down with being a social smoker and higher BMIs
+
++ Joint Pains go up with average workload and in Season 4. Since season 4 is spring, it suggests that Joint pains might be a common false reason or there might be an effect of going outdoors after a while or even spring cleaning.
 
