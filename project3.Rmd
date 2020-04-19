@@ -144,8 +144,9 @@ absent_n <- as.data.frame(lapply(absent_mm, normalize))
 ```
 
 * Struggles and trials we have been through in this stage:
+
 We struggled a lot with creating categories for Absenteeism in hours. Our response variable was absenteeism time in hours and after some data exploration we noticed that the distribution of hours was not continuous. It was discrete and mostly in increments of 8 hours after surpassing a day of absence. So, we  decided to make this a factor instead since we believed that would provide more information. For example, stating that an employee would be absent for 1-3 days is more intuitive to understand than 30 hours. 
-First we made 6 categoriess("not.absent","less.than.one.day","one.to.four.days","four.days.to.one.week","one.to.two.weeks","more.than.two.weeks") but we ran into the issue of a skewed distribution among the classes, hence we had very low Accuracy and Kappa. We noticed that the large majority of people were only absent for a couple hours in a day, the second largest majority was between 1-5 days. After some trails, we settled on a factor of 3 levels- "less.than.day", "less.than.one.week", and "more.than.one.week".
+First we made 6 categoriess("not.absent","less.than.one.day","one.to.four.days","four.days.to.one.week","one.to.two.weeks","more.than.two.weeks") but we ran into the issue of a skewed distribution among the classes, hence we had very low Accuracy and Kappa. We noticed that the large majority of people were only absent for a couple hours in a day, the second largest majority was between 1-5 days. After some trails, we settled on a factor of 3 levels- "less.than.day", "less.than.one.week", and "more.than.one.week ".
 
 Furthermore,we decided to add more data rows(from 740 to 828) so that we can have more evenly distributed data.(so that we don't have a test data set with 0 data in"more.than.one.week") 
 
