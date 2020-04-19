@@ -63,7 +63,7 @@ absent$Disciplinary.failure<-NULL
 
 ## Linear Modeling: Determining Significant Predictors of Absenteesim
 
-Now, let's run linear models again and see if they give us better R^2.
+Now, let's run linear models on the remaining variables again and see if they give us better $R^2$ value.
 
 ```{r}
 lm1 <-lm(Absenteeism.time.in.hours ~.,data=absent) %>% stepAIC(trace = FALSE, direction = "forward")
@@ -75,31 +75,43 @@ summary(lm2)
 ```
 
 ## Explanation on significant factors, getting rid of insignificant factors
-Reason for absense: Overall reasons for absence are significant, but some reasons have more of impact than others. I guess that's because some reasons are commonplace or popular while others are more personal and not widely used.
+* ***Reason for absense***
+ +Overall reasons for absence are significant, but some reasons have more of impact than others. I guess that's because some reasons are commonplace or popular while others are more personal and not widely used.
 
-Month of absence:It is not a significant factor, however by common sense, we would expect people to take more leaves during holiday season,such as Christams and New Year Holiday,and take less leaves after that, which is the first quarter of the year.
+* ***Month of absence***
+ +It is not a significant factor, however by common sense, we would expect people to take more leaves during holiday season,such as Christams and New Year Holiday,and take less leaves after that, which is the first quarter of the year.
 
-Day of the Week: Comparatively, people take more leaves in the first few days of the week, one possible explanation is people tend to have "Monday Syndrome", and in the last few workdays(Thursdays and Fridays) they tend to work harder and longer to finish the work in time in order to have a good weekend.
+* ***Day of the Week***
+ +Comparatively, people take more leaves in the first few days of the week, one possible explanation is people tend to have "Monday Syndrome", and in the last few workdays(Thursdays and Fridays) they tend to work harder and longer to finish the work in time in order to have a good weekend.
 
-Seasons: Similar to Month of absense. We can see people take longer leaves during season 2,3,4 than season 1, I guess that's because in season 1 most people just come back from Christmas and New Year Holiday, and there are less holidays in season 1.
+* ***Seasons***
+ +Similar to Month of absense. We can see people take longer leaves during season 2,3,4 than season 1, I guess that's because in season 1 most people just come back from Christmas and New Year Holiday, and there are less holidays in season 1.
 
-Transportation expense: We expected that people who need more transportation expenses tend to have more absense. Interestingly, the coefficient is postive but really small, also it is not significant. I guess this is because most people won't consider transportation expenses when they are thinking if they want to go to work today (since you can make more money than transportation expenses if you work)
+* ***Transportation expense***
+ +We expected that people who need more transportation expenses tend to have more absense. Interestingly, the coefficient is postive but really small, also it is not significant. I guess this is because most people won't consider transportation expenses when they are thinking if they want to go to work today (since you can make more money than transportation expenses if you work)
 
-Distance from Residence to Work: The result is kind of counterintuitive since we expectd that people who liver closer to the company will show up more compared to people who don't. Though it is not significant, the relationship is negative. Maybe it is becuase people who liver closer tend to procrastinate and leave home later than people who live farther away and get up earlier.
+* ***Distance from Residence to Work***
+ +The result is kind of counterintuitive since we expectd that people who liver closer to the company will show up more compared to people who don't. Though it is not significant, the relationship is negative. Maybe it is becuase people who liver closer tend to procrastinate and leave home later than people who live farther away and get up earlier.
 
-Service time:Intuitively, people who do more volunteer work would of course ask for more leaves than people who don't.
+* ***Service time***
+ +Intuitively, people who do more volunteer work would of course ask for more leaves than people who don't.
+* ***Age***
+ +Older people may ask for more leaves due to health issues, or because they are more senior so the legwork can be handed to juniors and they can leave earlier.
 
-Age:Older people may ask for more leaves due to health issues, or because they are more senior so the legwork can be handed to juniors and they can leave earlier.
+* ***Work load Average day***
+ +The coefficient is negative, which is straigtforward because the more workload you have the less likely you will take a break.
 
-Work load Average day:The coefficient is negative, which is straigtforward because the more workload you have the less likely you will take a break.
+* ***Hit target***
+ +If you have hit the target of your manager/your team, you can be rewarded with more breaks.
 
-Hit target:If you have hit the target of your manager/your team, you can be rewarded with more breaks.
+* ***Son***
+ +It is pretty straightforward that more kids means people need more commitment to the family and more parental leaves, therefore the relationship is negative.
 
-Son:It is pretty straightforward that more kids means people need more commitment to the family and more parental leaves, therefore the relationship is negative.
+* ***Pet***
+ +We expected it to be similar to "Son", however the relationship is negative. One possible interpreation is that people who have pets are mostly young people who don't have kids. Also, pets need less dedication that kids(since you don't need to cook for pets and tutor them)
 
-Pet:We expected it to be similar to "Son", however the relationship is negative. One possible interpreation is that people who have pets are mostly young people who don't have kids. Also, pets need less dedication that kids(since you don't need to cook for pets and tutor them)
-
-Weight, Height, Body mass index:We expected a healthy body would save people from taking sick leaves. Weight and height are very insignificant since people with different heights have different healthy weights. BMI index is also significant since a good BMI is between 18.5-24.9——neither a too high or too low BMI index is good.
+* ***Weight, Height, Body mass index***
+ +We expected a healthy body would save people from taking sick leaves. Weight and height are very insignificant since people with different heights have different healthy weights. BMI index is also significant since a good BMI is between 18.5-24.9——neither a too high or too low BMI index is good.
 
 ## Data Cleaning again, randomizing and normalizing data
 
@@ -132,13 +144,15 @@ absent_n <- as.data.frame(lapply(absent_mm, normalize))
 ```
 
 * Struggles and trials we have been through in this stage:
-We struggled a lot with creating categories for Absenteeism in hours. In the beginning, we created 6 categories("not.absent","less.than.one.day","one.to.four.days","four.days.to.one.week","one.to.two.weeks","more.than.two.weeks"),but because there are too many categories we were unable to make models with satisfying Accuracy or Kappa.Also, since the dataset is skewed (the majority concentrated in less.than.one.day", we got a lots of test data sets with no data points in "one.to.two.weeks","more.than.two.weeks".After some trials, we decided to narrow down to three categories,so our second try is "less.than.day","less.than.one.week","more.than.one.week".
+We struggled a lot with creating categories for Absenteeism in hours. In the beginning, we decided that predicting how many hours an employee will be absent will not be more straightforward or add more business values than predicting how many days/weeks an employee will be absent.
+So first, we created 6 categories("not.absent","less.than.one.day","one.to.four.days","four.days.to.one.week","one.to.two.weeks","more.than.two.weeks"),but because there are too many categories we were unable to make models with satisfying Accuracy or Kappa.Also, since the dataset is skewed (the majority concentrated in less.than.one.day", we got a lots of test data sets with no data points in "one.to.two.weeks","more.than.two.weeks".After some trials, we decided to narrow down to three categories,so our second try is "less.than.day","less.than.one.week","more.than.one.week".
 
 Furthermore,we decided to add more data rows(from 740 to 828) so that we can have more evenly distributed data.(so that we don't have a test data set with 0 data in"more.than.one.week") 
 
 # Classification
-Here are the models we made in order to find out the best model in predicting roughly how many days/weeks an employee will be absent.
+Below are the models we made in order to find out the best model in predicting roughly how many days/weeks an employee will be absent.
 ##1. KNN Model
+We now build a KNN model with the randomized and normalized data set and significant variables that we decided to keep.
 ```{r}
 ##Getting my own absent from the above
 absent_SP <- cbind(absent_n, absent$timecat)
@@ -159,6 +173,7 @@ confusionMatrix(as.factor(KNN_MODEL),as.factor(abs_test_label))
 Interpretation:
 
 ## 2. ANN Model
+Now we build ANN models with 2/5/8 neurons.
 ```{r}
 absam<-absent_SP
 #View(absam)
@@ -200,6 +215,7 @@ confusionMatrix(as.factor(pr.nn_2),as.factor(original_values))
 Interpretation:
 
 ## 3. Decision Tree, Boosted Decision Tree with 10 trials/100 trials/a cost matrix
+Now, we build three different Decision Tree Models and graphs to see which variable accounts for the most Accuracy and how good Decision Tree Models are when predicitng Abseenteeism.
 ```{r}
 set.seed(12345)
 
@@ -239,7 +255,7 @@ confusionMatrix(abs_test_tree$timecat, abs_pred)
 
 ```
 
-Decision Tree model gives a really high accuracy (~90%) and a high Kappa (~83%). Let's see if boosting can further improve the accuracy and Kappa.
+The above Decision Tree model gives a really high accuracy (~90%) and a high Kappa (~83%). Let's see if boosting can further improve the accuracy and Kappa.
 
 ```{r}
 ## Boosting the accuracy of decision trees
@@ -255,8 +271,8 @@ CrossTable(abs_test_tree$timecat, abs_boost_pred10,
 confusionMatrix(abs_test_tree$timecat, abs_boost_pred10)
 ```
 
-Boosted decision tree with 10 trials increased the accuracy to 91% and Kappa to 85%.
-
+Boosted decision tree with 10 trials increased Accuracy to 91% and Kappa to 85%.
+Next, we increase the trial numbers to 100 to see if this can further improve Accuracy and Kappa.
 ```{r}
 # boosted decision tree with 100 trials (not shown in text)
 abs_boost100 <- C5.0(abs_train_tree[-14], abs_train_tree$timecat,
@@ -269,7 +285,7 @@ confusionMatrix(abs_test_tree$timecat, abs_boost_pred100)
 ```
 
 Surprisingly, boosted decision tree with 100 trials does not improve the model much.
-
+Next, we tried to create a cost matrix to see if it can improve Accuracy and Kappa.
 ```{r}
 ## Making some mistakes more costly than others
 # create a cost matrix
@@ -291,6 +307,7 @@ Decision tree with a cost matrix does not improve the model much, either.
 Therefore, the best model is the boosted decision tree with 10 trials.
 
 ## KSVM Model
+Below, Absenteeism is predicted using an SVM classifier with a linear kernel using the significant features found above as the predictors. 
 ```{r}
 library(kernlab)
 ksvm_model1 <- ksvm(timecat~ ., data = abs_train_tree,
@@ -305,6 +322,8 @@ ksvm_predictions <- as.factor(ksvm_predictions)
 confusionMatrix(ksvm_predictions,abs_test_tree$timecat)
 
 ```
+We tried the KSVM model with various kerns. After doing a confusion matrix for both models, we found the KSVM model with rbf kernel has a more accurate prediction rate.
+
 ```{r}
 ## Trying a different kernel
 ksvm_model_rbf <- ksvm(timecat~ ., data = abs_train_tree, kernel = "rbfdot")
@@ -341,8 +360,8 @@ library(caret)
 xtab <- confusionMatrix(as.factor(test_absent$timecat), as.factor(prediction))
 xtab
 ```
-
-Linear KSVM model gives 77% accuracy and 59% Kappa;KSVM model with rbf kernal gives 95% accuracy and 91% Kappa.
+We consider the model above to be "good" in the sense that the $p$- value is very small, and the accuracy is high (at least better than chance, and as close as possible to 1).
+Linear KSVM model gives 77% accuracy and 59% Kappa;KSVM model with rbf kernal gives 95% accuracy and 91% Kappa.After using the above models to predict Absenteeism, we found that the Decision Tree model and KSVM models are more accurate. 
 
 From the decision tree graph, we can see Reason for Absense is the most important facotor when classifying absent hours, let's make a random forest model and see if it also tells us the same conclusion.
 
@@ -468,7 +487,7 @@ cor(predicted_strength2, absent_ANN_test$Absenteeism.time.in.hours)
 With 15 neurons, we get a pretty high accruacy, ~88%. From the result, we can conclude that the variables that we keep are doing a good job in predicting Absenteeism.time.in.hours.
 
 
-# Business values and potential:
+# Remarks about Business values and potential:
 
 Based on Reasons for absence that an employee gives, where he/she lives, average social service time he/she spends every year,age,work load,and the day of the week/the month/the season when he/she askes for a leave, HR can predict how many hours an employee will be absent on the job, therefore it helps on makeing decisions on hiring employees,estimating new hire headcounts, altering healthcare plans,employee relocation, regulations and contract benefits.
 
