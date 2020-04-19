@@ -21,6 +21,9 @@ library(BART)
 library(kernlab)
 library(class)
 ```
+# Introduction of the data set
+The Absenteesim data set has 21 columns of variables, not all of which may be ready for immediate regression and analysis. Moreover, for the sake of time and memory efficiency, we shall eliminate variables that are not scalable (those that cannot be converted to a numeric scale or ordered sequence), and have too many factor levels.
+
 
 # Data Import and Data Cleaning
 ```{r}
@@ -28,6 +31,9 @@ setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
 absent <-read.csv("Absenteeism_at_work2.csv")
 
 ```
+
+First, we tried to run linear models. However, because we have too many variables whereas our data only have 740 rows, most variables in our linear model turned out to be insignificant. therefore we decided to get rid of some variables that are distracting and decreasing model accuracy.For example,we deleted the variable "ID", then we turned Seasons into a binary variable "is_Seas4" because Season4 is the only significant factor among 4 seasons.For similar reasons, we turned Day.of.the.week into a binary variable "is_Thurs". Also, we deleted some insignificant variables: 
+"Month of absence","Weight",Education","Transportation expense","Social drinker","Disciplinary.failure".
 
 ```{r}
 ##Converting into factors 
@@ -55,7 +61,10 @@ absent$Social.drinker<-NULL
 absent$Disciplinary.failure<-NULL
 ```
 
-# Linear Model
+## Linear Modeling: Determining Significant Predictors of Absenteesim
+
+Now, let's run linear models again and see if they give us better R^2.
+
 ```{r}
 lm1 <-lm(Absenteeism.time.in.hours ~.,data=absent) %>% stepAIC(trace = FALSE, direction = "forward")
 summary(lm1)
@@ -65,7 +74,7 @@ lm2 <- lm(Absenteeism.time.in.hours ~.,data=absent) %>% stepAIC(scope = . ~ .^2 
 summary(lm2)
 ```
 
-## Intuition and Explanation on significant factors
+## Explanation on significant factors, getting rid of insignificant factors
 Reason for absense: Overall reasons for absence are significant, but some reasons have more of impact than others. I guess that's because some reasons are commonplace or popular while others are more personal and not widely used.
 
 Month of absence:It is not a significant factor, however by common sense, we would expect people to take more leaves during holiday season,such as Christams and New Year Holiday,and take less leaves after that, which is the first quarter of the year.
@@ -86,21 +95,16 @@ Work load Average day:The coefficient is negative, which is straigtforward becau
 
 Hit target:If you have hit the target of your manager/your team, you can be rewarded with more breaks.
 
-Education:The higher degree you have, the more capable you are and therefore, you will need to handle more challenging work that may require more time.
-
 Son:It is pretty straightforward that more kids means people need more commitment to the family and more parental leaves, therefore the relationship is negative.
-
-Social drinker: ?
-
-Social smoker: ?
 
 Pet:We expected it to be similar to "Son", however the relationship is negative. One possible interpreation is that people who have pets are mostly young people who don't have kids. Also, pets need less dedication that kids(since you don't need to cook for pets and tutor them)
 
-
 Weight, Height, Body mass index:We expected a healthy body would save people from taking sick leaves. Weight and height are very insignificant since people with different heights have different healthy weights. BMI index is also significant since a good BMI is between 18.5-24.9——neither a too high or too low BMI index is good.
 
+## Data Cleaning again, randomizing and normalizing data
 
-# Data Cleaning again, randomizing and normalizing data
+Now, we need to further clean, randomize and normalize our data, in preparation for KNN,ANN, Decision Tree models,etc.
+
 ```{r}
 ##Building categories
 absent$timecat <- absent$Absenteeism.time.in.hours
@@ -127,9 +131,14 @@ normalize <- function(x) {
 absent_n <- as.data.frame(lapply(absent_mm, normalize))
 ```
 
-# Classification
+* Struggles and trials we have been through in this stage:
+We struggled a lot with creating categories for Absenteeism in hours. In the beginning, we created 6 categories("not.absent","less.than.one.day","one.to.four.days","four.days.to.one.week","one.to.two.weeks","more.than.two.weeks"),but because there are too many categories we were unable to make models with satisfying Accuracy or Kappa.Also, since the dataset is skewed (the majority concentrated in less.than.one.day", we got a lots of test data sets with no data points in "one.to.two.weeks","more.than.two.weeks".After some trials, we decided to narrow down to three categories,so our second try is "less.than.day","less.than.one.week","more.than.one.week".
 
-##KNN Model
+Furthermore,we decided to add more data rows(from 740 to 828) so that we can have more evenly distributed data.(so that we don't have a test data set with 0 data in"more.than.one.week") 
+
+# Classification
+Here are the models we made in order to find out the best model in predicting roughly how many days/weeks an employee will be absent.
+##1. KNN Model
 ```{r}
 ##Getting my own absent from the above
 absent_SP <- cbind(absent_n, absent$timecat)
@@ -147,8 +156,9 @@ KNN_MODEL <- knn(train = abs_train, test = abs_test,
 confusionMatrix(as.factor(KNN_MODEL),as.factor(abs_test_label))
 ```
 
+Interpretation:
 
-## ANN Model
+## 2. ANN Model
 ```{r}
 absam<-absent_SP
 #View(absam)
@@ -187,9 +197,9 @@ mean(pr.nn_2 == original_values)
 confusionMatrix(as.factor(pr.nn_2),as.factor(original_values))
 ```
 
+Interpretation:
 
-
-## Decision Tree
+## 3. Decision Tree, Boosted Decision Tree with 10 trials/100 trials/a cost matrix
 ```{r}
 set.seed(12345)
 
@@ -229,6 +239,8 @@ confusionMatrix(abs_test_tree$timecat, abs_pred)
 
 ```
 
+Decision Tree model gives a really high accuracy (~90%) and a high Kappa (~83%). Let's see if boosting can further improve the accuracy and Kappa.
+
 ```{r}
 ## Boosting the accuracy of decision trees
 # boosted decision tree with 10 trials
@@ -243,6 +255,7 @@ CrossTable(abs_test_tree$timecat, abs_boost_pred10,
 confusionMatrix(abs_test_tree$timecat, abs_boost_pred10)
 ```
 
+Boosted decision tree with 10 trials increased the accuracy to 91% and Kappa to 85%.
 
 ```{r}
 # boosted decision tree with 100 trials (not shown in text)
@@ -255,16 +268,16 @@ CrossTable(abs_test_tree$timecat, abs_boost_pred100,
 confusionMatrix(abs_test_tree$timecat, abs_boost_pred100)
 ```
 
+Surprisingly, boosted decision tree with 100 trials does not improve the model much.
 
 ```{r}
 ## Making some mistakes more costly than others
 # create a cost matrix
-error_cost <- matrix(c(0, 5, 5, 5,0,5,5,5,0), nrow = 3)
+error_cost <- matrix(c(0,4,4,4,0,4,4,4,0), nrow = 3)
 
 
 # apply the cost matrix to the tree  "Reason for absence" accounts for 62% accurancy, it's the most important factor when estimating how long you will be absent. Don't do classfication, do prediction. 
-abs_cost <- C5.0(abs_train_tree[-14
-                                ], abs_train_tree$timecat,
+abs_cost <- C5.0(abs_train_tree[-14 ], abs_train_tree$timecat,
                           costs = error_cost)
 abs_cost_pred <- predict(abs_cost, abs_test_tree)
 
@@ -274,8 +287,8 @@ CrossTable(abs_test_tree$timecat, abs_cost_pred,
 confusionMatrix(abs_test_tree$timecat,abs_cost_pred)
 
 ```
-
-Best model was boost 100
+Decision tree with a cost matrix does not improve the model much, either.
+Therefore, the best model is the boosted decision tree with 10 trials.
 
 ## KSVM Model
 ```{r}
@@ -329,16 +342,59 @@ xtab <- confusionMatrix(as.factor(test_absent$timecat), as.factor(prediction))
 xtab
 ```
 
+Linear KSVM model gives 77% accuracy and 59% Kappa;KSVM model with rbf kernal gives 95% accuracy and 91% Kappa.
+
+From the decision tree graph, we can see Reason for Absense is the most important facotor when classifying absent hours, let's make a random forest model and see if it also tells us the same conclusion.
+
+# 4. Random Forest + Explainer
+```{r}
+library(randomForest)
+# Training with Random forest model
+forest <- randomForest(timecat ~. , data=train_absent, localImp = TRUE)
+forest
+```
 
 
+```{r}
+print(forest, digits=3)
+# Predict the testing set with the trained model
+predictions2 <- predict(forest, test_absent, type = "class")
+
+# Accuracy and other metrics
+confusionMatrix(predictions2, test_absent$timecat)
+```
+
+```{r}
+library(randomForestExplainer)
+min_depth_frame <- min_depth_distribution(forest)
+save(min_depth_frame, file = "min_depth_frame.rda")
+load("min_depth_frame.rda")
+head(min_depth_frame, n = 10)
+
+# plot_min_depth_distribution(forest) # gives the same result as below but takes longer
+plot_min_depth_distribution(min_depth_frame)
+plot_min_depth_distribution(min_depth_frame, mean_sample = "relevant_trees", k = 15)
+
+importance_frame <- measure_importance(forest)
+save(importance_frame, file = "importance_frame.rda")
+load("importance_frame.rda")
+importance_frame
+```
+
+```{r}
+explain_forest(forest, interactions=TRUE, data=train_absent)
+```
+
+Interpretation:
 
 
 
 # Prediction 
+
 ## ANN model
 ```{r}
 setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
-absentANN <-read.csv("Absenteeism_at_work.csv")
+absentANN <-read.csv("Absenteeism_at_work2.csv")
 str(absentANN)
 #absentANN$Reason.for.absence <- as.factor(absentANN$Reason.for.absence)
 #absentANN$Month.of.absence <- as.factor(absentANN$Month.of.absence)
@@ -348,7 +404,7 @@ absentANN$Disciplinary.failure <-as.factor(absentANN$Disciplinary.failure)
 #absentANN$Education <- as.factor(absentANN$Education)
 #absentANN$Social.drinker <-as.factor(absentANN$Social.drinker)
 #absentANN$Social.smoker <-as.factor(absentANN$Social.smoker)
-absentANN$ï..ID  <- NULL
+absentANN$ID  <- NULL
 absentANN$Work.load.Average.day<-as.numeric(absentANN$Work.load.Average.day)
 absentANN$Month.of.absence<- NULL
 absentANN$Weight<- NULL
@@ -357,7 +413,7 @@ absentANN$Day.of.the.week<-NULL
 absentANN$is_Seas4<-if_else(absentANN$Seasons==4,1,0)
 absentANN$Seasons<-NULL
 #absent$is_Educ3<-if_else(absent$Education==3,1,0) Once I do this, Seasons and Education3 no longer significant
-#absent$Education<-NULL
+absent$Education<-NULL
 absentANN$Transportation.expense<-NULL
 absentANN$Social.drinker<-NULL
 absentANN$Disciplinary.failure<-NULL
@@ -409,45 +465,11 @@ cor(predicted_strength2, absent_ANN_test$Absenteeism.time.in.hours)
 
 
 ```
-With 15 neurons, we get a pretty high accruacy, ~85%.
+With 15 neurons, we get a pretty high accruacy, ~88%. From the result, we can conclude that the variables that we keep are doing a good job in predicting Absenteeism.time.in.hours.
 
 
-# Random Forest + Explainer
-```{r}
-library(randomForest)
-# Training with Random forest model
-forest <- randomForest(timecat ~. , data=train_absent, localImp = TRUE)
-forest
-```
+# Business values and potential:
 
+Based on Reasons for absence that an employee gives, where he/she lives, average social service time he/she spends every year,age,work load,and the day of the week/the month/the season when he/she askes for a leave, HR can predict how many hours an employee will be absent on the job, therefore it helps on makeing decisions on hiring employees,estimating new hire headcounts, altering healthcare plans,employee relocation, regulations and contract benefits.
 
-```{r}
-print(forest, digits=3)
-# Predict the testing set with the trained model
-predictions2 <- predict(forest, test_absent, type = "class")
-
-# Accuracy and other metrics
-confusionMatrix(predictions2, test_absent$timecat)
-```
-
-```{r}
-library(randomForestExplainer)
-min_depth_frame <- min_depth_distribution(forest)
-save(min_depth_frame, file = "min_depth_frame.rda")
-load("min_depth_frame.rda")
-head(min_depth_frame, n = 10)
-
-# plot_min_depth_distribution(forest) # gives the same result as below but takes longer
-plot_min_depth_distribution(min_depth_frame)
-plot_min_depth_distribution(min_depth_frame, mean_sample = "relevant_trees", k = 15)
-
-importance_frame <- measure_importance(forest)
-save(importance_frame, file = "importance_frame.rda")
-load("importance_frame.rda")
-importance_frame
-```
-
-```{r}
-explain_forest(forest, interactions=TRUE, data=train_absent)
-```
 
