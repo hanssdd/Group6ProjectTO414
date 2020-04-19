@@ -410,3 +410,44 @@ cor(predicted_strength2, absent_ANN_test$Absenteeism.time.in.hours)
 
 ```
 With 15 neurons, we get a pretty high accruacy, ~85%.
+
+
+# Random Forest + Explainer
+```{r}
+library(randomForest)
+# Training with Random forest model
+forest <- randomForest(timecat ~. , data=train_absent, localImp = TRUE)
+forest
+```
+
+
+```{r}
+print(forest, digits=3)
+# Predict the testing set with the trained model
+predictions2 <- predict(forest, test_absent, type = "class")
+
+# Accuracy and other metrics
+confusionMatrix(predictions2, test_absent$timecat)
+```
+
+```{r}
+library(randomForestExplainer)
+min_depth_frame <- min_depth_distribution(forest)
+save(min_depth_frame, file = "min_depth_frame.rda")
+load("min_depth_frame.rda")
+head(min_depth_frame, n = 10)
+
+# plot_min_depth_distribution(forest) # gives the same result as below but takes longer
+plot_min_depth_distribution(min_depth_frame)
+plot_min_depth_distribution(min_depth_frame, mean_sample = "relevant_trees", k = 15)
+
+importance_frame <- measure_importance(forest)
+save(importance_frame, file = "importance_frame.rda")
+load("importance_frame.rda")
+importance_frame
+```
+
+```{r}
+explain_forest(forest, interactions=TRUE, data=train_absent)
+```
+
