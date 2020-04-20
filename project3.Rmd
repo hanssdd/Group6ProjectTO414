@@ -283,7 +283,7 @@ confusionMatrix(abs_test_tree$timecat, abs_pred)
 
 ```
 
-The above Decision Tree model gives a really high accuracy (~90%) and a high Kappa (~83%). Let's see if boosting can further improve the accuracy and Kappa.
+The above Decision Tree model gives a decent accuracy (~80%) and a Kappa (~63%). Let's see if boosting can further improve the accuracy and Kappa.
 
 ```{r}
 ## Boosting the accuracy of decision trees
@@ -299,7 +299,7 @@ CrossTable(abs_test_tree$timecat, abs_boost_pred10,
 confusionMatrix(abs_test_tree$timecat, abs_boost_pred10)
 ```
 
-Boosted decision tree with 10 trials increased Accuracy to 91% and Kappa to 85%.
+Boosted decision tree with 10 trials increased slightly but not very significantly.
 Next, we increase the trial numbers to 100 to see if this can further improve Accuracy and Kappa.
 ```{r}
 # boosted decision tree with 100 trials (not shown in text)
@@ -312,7 +312,7 @@ CrossTable(abs_test_tree$timecat, abs_boost_pred100,
 confusionMatrix(abs_test_tree$timecat, abs_boost_pred100)
 ```
 
-Surprisingly, boosted decision tree with 100 trials does not improve the model much.
+The oosted decision tree with 100 trials does improve the model slightly to an accuracy above 80\%.
 Next, we tried to create a cost matrix to see if it can improve Accuracy and Kappa.
 
 ```{r}
@@ -333,8 +333,8 @@ confusionMatrix(abs_test_tree$timecat,abs_cost_pred)
 
 ```
 
-Decision tree with a cost matrix does not improve the model much, either.
-Therefore, the best model is the boosted decision tree with 10 trials.
+Decision tree with a cost matrix does not improve the model from the boosted decision tree with 100 trials.
+Therefore, the best model is the boosted decision tree with 100 trials.
 
 
 

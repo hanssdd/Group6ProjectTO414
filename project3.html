@@ -4545,9 +4545,9 @@ library(neuralnet, warn.conflicts=FALSE, quietly = TRUE)</code></pre>
                 linear.output = FALSE,
                 lifesign = &quot;minimal&quot;,
                 threshold = 0.5)</code></pre>
-<pre><code>## hidden: 8, 5, 2    thresh: 0.5    rep: 1/3    steps:    1742 error: 150.63847    time: 5.47 secs
-## hidden: 8, 5, 2    thresh: 0.5    rep: 2/3    steps:    6858 error: 146.11653    time: 21.51 secs
-## hidden: 8, 5, 2    thresh: 0.5    rep: 3/3    steps:   13562 error: 142.29268    time: 45.01 secs</code></pre>
+<pre><code>## hidden: 8, 5, 2    thresh: 0.5    rep: 1/3    steps:    1742 error: 150.63847    time: 3.75 secs
+## hidden: 8, 5, 2    thresh: 0.5    rep: 2/3    steps:    6858 error: 146.11653    time: 14.49 secs
+## hidden: 8, 5, 2    thresh: 0.5    rep: 3/3    steps:   13562 error: 142.29268    time: 28.76 secs</code></pre>
 <pre class="r"><code>#plot(nn)
 
 pr.nn &lt;- compute(nn, train[, 1:40])
@@ -4645,7 +4645,7 @@ summary(abs_model)</code></pre>
 ## C5.0.default(x = abs_train_tree[-14], y = abs_train_tree$timecat)
 ## 
 ## 
-## C5.0 [Release 2.07 GPL Edition]      Mon Apr 20 18:43:23 2020
+## C5.0 [Release 2.07 GPL Edition]      Tue Apr 21 00:56:27 2020
 ## -------------------------------
 ## 
 ## Class specified by attribute `outcome&#39;
@@ -4836,7 +4836,7 @@ CrossTable(abs_test_tree$timecat, abs_pred,
 ## Detection Rate                          0.1000
 ## Detection Prevalence                    0.1000
 ## Balanced Accuracy                       0.8125</code></pre>
-<p>The above Decision Tree model gives a really high accuracy (~90%) and a high Kappa (~83%). Let’s see if boosting can further improve the accuracy and Kappa.</p>
+<p>The above Decision Tree model gives a decent accuracy (~80%) and a Kappa (~63%). Let’s see if boosting can further improve the accuracy and Kappa.</p>
 <pre class="r"><code>## Boosting the accuracy of decision trees
 # boosted decision tree with 10 trials
 abs_boost10 &lt;- C5.0(abs_train_tree[-14], abs_train_tree$timecat,
@@ -4847,7 +4847,7 @@ summary(abs_boost10)</code></pre>
 ## C5.0.default(x = abs_train_tree[-14], y = abs_train_tree$timecat, trials = 10)
 ## 
 ## 
-## C5.0 [Release 2.07 GPL Edition]      Mon Apr 20 18:43:23 2020
+## C5.0 [Release 2.07 GPL Edition]      Tue Apr 21 00:56:27 2020
 ## -------------------------------
 ## 
 ## Class specified by attribute `outcome&#39;
@@ -5723,7 +5723,7 @@ CrossTable(abs_test_tree$timecat, abs_boost_pred10,
 ## Detection Rate                          0.1000
 ## Detection Prevalence                    0.1000
 ## Balanced Accuracy                       0.9545</code></pre>
-<p>Boosted decision tree with 10 trials increased Accuracy to 91% and Kappa to 85%. Next, we increase the trial numbers to 100 to see if this can further improve Accuracy and Kappa.</p>
+<p>Boosted decision tree with 10 trials increased slightly but not very significantly. Next, we increase the trial numbers to 100 to see if this can further improve Accuracy and Kappa.</p>
 <pre class="r"><code># boosted decision tree with 100 trials (not shown in text)
 abs_boost100 &lt;- C5.0(abs_train_tree[-14], abs_train_tree$timecat,
                         trials = 100)
@@ -5799,7 +5799,7 @@ CrossTable(abs_test_tree$timecat, abs_boost_pred100,
 ## Detection Rate                          0.1000
 ## Detection Prevalence                    0.1000
 ## Balanced Accuracy                       0.9545</code></pre>
-<p>Surprisingly, boosted decision tree with 100 trials does not improve the model much. Next, we tried to create a cost matrix to see if it can improve Accuracy and Kappa.</p>
+<p>The oosted decision tree with 100 trials does improve the model slightly to an accuracy above 80%. Next, we tried to create a cost matrix to see if it can improve Accuracy and Kappa.</p>
 <pre class="r"><code>## Making some mistakes more costly than others
 # create a cost matrix
 error_cost &lt;- matrix(c(0,4,4,4,0,4,4,4,0), nrow = 3)
@@ -5883,7 +5883,7 @@ CrossTable(abs_test_tree$timecat, abs_cost_pred,
 ## Detection Rate                          0.1000
 ## Detection Prevalence                    0.1000
 ## Balanced Accuracy                       0.8333</code></pre>
-<p>Decision tree with a cost matrix does not improve the model much, either. Therefore, the best model is the boosted decision tree with 10 trials.</p>
+<p>Decision tree with a cost matrix does not improve the model from the boosted decision tree with 100 trials. Therefore, the best model is the boosted decision tree with 100 trials.</p>
 </div>
 <div id="svm-model" class="section level1">
 <h1><span class="header-section-number">6</span> SVM Model</h1>
