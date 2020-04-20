@@ -1,7 +1,7 @@
 ---
 title: "Project3"
 author: "Group 6"
-date: "4/2/2020"
+date: "4/20/2020"
 output: 
   html_document:
     toc: true
@@ -9,33 +9,38 @@ output:
       collapse: false
     number_sections: true
     theme: cerulean
-    df_print: paged
+    df_print: kable
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
-library(tidyverse)
-library(dplyr)
-library(caret)
-library(MASS)
-library(BART)
-library(kernlab)
-library(class)
+library(tidyverse, warn.conflicts=FALSE, quietly = TRUE)
+library(dplyr, warn.conflicts=FALSE, quietly = TRUE)
+library(caret, warn.conflicts=FALSE, quietly = TRUE)
+library(MASS, warn.conflicts=FALSE, quietly = TRUE)
+library(BART, warn.conflicts=FALSE, quietly = TRUE)
+library(kernlab, warn.conflicts=FALSE, quietly = TRUE)
+library(class, warn.conflicts=FALSE, quietly = TRUE)
 ```
 # Introduction of the data set
-The Absenteesim data set contains personal information about employees working at a Delivery Company in Brazil, along with number and reasons for absences. It has 21 columns and 740 rows of data.Excessive absenteeism leads to loss of productivity which negatively affects company performance (~$84B in costs yearly), therefore, we decided that analyzing absenteeism will potentially add great business values to companies;
+The Absenteesim data set contains information about employees working at a Delivery Company in Brazil, along with number and reasons for absences. It has 21 columns and 740 rows of data. Excessive absenteeism leads to loss of productivity which negatively affects company performance (~$84B in costs yearly), therefore, we decided that analyzing absenteeism will potentially add great business values to companies;
 
 The Absenteesim data set has 21 columns of variables, not all of which may be ready for immediate regression and analysis. Moreover, for the sake of time and memory efficiency, we shall eliminate variables that are not scalable (those that cannot be converted to a numeric scale or ordered sequence), and have too many factor levels.
 
 
-# Data Import and Data Cleaning
+# Data Cleaning
 ```{r}
-setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
 absent <-read.csv("Absenteeism_at_work2.csv")
 
 ```
 
-First, we tried to run linear models. However, because we have too many variables whereas our data only have 740 rows, most variables in our linear model turned out to be insignificant. therefore we decided to get rid of some variables that are distracting and decreasing model accuracy.For example,we deleted the variable "ID", then we turned Seasons into a binary variable "is_Seas4" because Season4 is the only significant factor among 4 seasons.For similar reasons, we turned Day.of.the.week into a binary variable "is_Thurs". Also, we deleted some insignificant variables: 
-"Month of absence","Weight",Education","Transportation expense","Social drinker","Disciplinary.failure".
+## Eliminating Insignificant Variables and Conversion into Appropriate Data Types
+First, we tried to run linear models. However, because we have too many variables whereas our data only have 740 rows, most variables in our linear model turned out to be insignificant. therefore we decided to get rid of some variables that are distracting and decreasing model accuracy. For example,we deleted the variable "ID", then we turned Seasons into a binary variable "is_Seas4" because Season4 is the only significant factor among 4 seasons. For similar reasons, we turned Day.of.the.week into a binary variable "is_Thurs". Also, we deleted some insignificant variables: 
+* "Month of absence"
+* "Weight",Education"
+* "Transportation expense"
+* "Social drinker"
+* "Disciplinary.failure".
 
 ```{r}
 ##Converting into factors 
@@ -47,6 +52,8 @@ absent$Disciplinary.failure <-as.factor(absent$Disciplinary.failure)
 absent$Education <- as.factor(absent$Education)
 absent$Social.drinker <-as.factor(absent$Social.drinker)
 absent$Social.smoker <-as.factor(absent$Social.smoker)
+
+## Eliminating Insgnificant Variables
 absent$ï..ID  <- NULL
 absent$ID  <- NULL
 absent$Work.load.Average.day<-as.numeric(absent$Work.load.Average.day)
@@ -77,46 +84,47 @@ summary(lm2)
 
 ## Explanation on significant factors, getting rid of insignificant factors
 * ***Reason for absense***
- +Overall reasons for absence are significant, but some reasons have more of impact than others. I guess that's because some reasons are commonplace or popular while others are more personal and not widely used.
+ + Overall reasons for absence are significant, but some reasons have more of impact than others. This is intuitive because more "light" reasons for leave like short appointments or short durations of sickness may indicate shorter leave duration. Meanwhile, more serious reasons like long medical leaves may take a few days of absence.
 
 * ***Month of absence***
- +It is not a significant factor, however by common sense, we would expect people to take more leaves during holiday season,such as Christams and New Year Holiday,and take less leaves after that, which is the first quarter of the year.
+ + It is not a significant factor, however by common sense, we would expect people to take more leaves during holiday season,such as Christams and New Year Holiday,and take less leaves after that, which is the first quarter of the year.
 
 * ***Day of the Week***
- +Comparatively, people take more leaves in the first few days of the week, one possible explanation is people tend to have "Monday Syndrome", and in the last few workdays(Thursdays and Fridays) they tend to work harder and longer to finish the work in time in order to have a good weekend.
+ + Comparatively, people take more leaves in the first few days of the week, one possible explanation is people tend to have "Monday Syndrome", and in the last few workdays(Thursdays and Fridays) they tend to work harder and longer to finish the work in time in order to have a good weekend.
 
 * ***Seasons***
- +Similar to Month of absense. We can see people take longer leaves during season 2,3,4 than season 1, I guess that's because in season 1 most people just come back from Christmas and New Year Holiday, and there are less holidays in season 1.
+ + Similar to Month of absense. We can see people take longer leaves during season 2,3,4 than season 1. We may guess this is because in season 1 most people just come back from Christmas and New Year Holiday, and there are less holidays in season 1.
 
 * ***Transportation expense***
- +We expected that people who need more transportation expenses tend to have more absense. Interestingly, the coefficient is postive but really small, also it is not significant. I guess this is because most people won't consider transportation expenses when they are thinking if they want to go to work today (since you can make more money than transportation expenses if you work)
+ + We expected that people who need more transportation expenses tend to have more absense. Interestingly, the coefficient is postive but really small, also it is not significant. This may be because most people won't consider transportation expenses when they are thinking if they want to go to work today (since you can make more money than transportation expenses if you work)
 
 * ***Distance from Residence to Work***
- +The result is kind of counterintuitive since we expectd that people who liver closer to the company will show up more compared to people who don't. Though it is not significant, the relationship is negative. Maybe it is becuase people who liver closer tend to procrastinate and leave home later than people who live farther away and get up earlier.
+ + The result is kind of counterintuitive since we expectd that people who live closer to the company will show up more compared to people who don't. Though it is not significant, the relationship is negative. Maybe it is becuase people who liver closer tend to procrastinate and leave home later than people who live farther away and get up earlier.
 
 * ***Service time***
- +Intuitively, people who do more volunteer work would of course ask for more leaves than people who don't.
+ + Intuitively, people who do more volunteer work would of course ask for more leave than people who don't.
+
 * ***Age***
- +Older people may ask for more leaves due to health issues, or because they are more senior so the legwork can be handed to juniors and they can leave earlier.
+ + Older people may ask for more leave due to health issues, or because they are more senior so the legwork can be handed to juniors and they can leave earlier.
 
 * ***Work load Average day***
- +The coefficient is negative, which is straigtforward because the more workload you have the less likely you will take a break.
+ + The coefficient is negative, which is straigtforward because the more workload you have the less likely you will take a break.
 
 * ***Hit target***
- +If you have hit the target of your manager/your team, you can be rewarded with more breaks.
+ + If you have hit the target of your manager/your team, you can be rewarded with more breaks.
 
 * ***Son***
- +It is pretty straightforward that more kids means people need more commitment to the family and more parental leaves, therefore the relationship is negative.
+ + It is pretty straightforward that more kids means people need more commitment to the family and more parental leaves, therefore the relationship is negative.
 
 * ***Pet***
- +We expected it to be similar to "Son", however the relationship is negative. One possible interpreation is that people who have pets are mostly young people who don't have kids. Also, pets need less dedication that kids(since you don't need to cook for pets and tutor them)
+ + We expected it to be similar to "Son", however the relationship is negative. One possible interpreation is that people who have pets are mostly young people who don't have kids. Also, pets need less dedication that kids(since you don't need to cook for pets and tutor them)
 
 * ***Weight, Height, Body mass index***
- +We expected a healthy body would save people from taking sick leaves. Weight and height are very insignificant since people with different heights have different healthy weights. BMI index is also significant since a good BMI is between 18.5-24.9——neither a too high or too low BMI index is good.
+ + We expected a healthy body would save people from taking sick leaves. Weight and height are very insignificant since people with different heights have different healthy weights. BMI index is also significant since a good BMI is between 18.5-24.9——neither a too high or too low BMI index is good.
 
-## Data Cleaning again, randomizing and normalizing data
+## Final Preparation of Data
 
-Now, we need to further clean, randomize and normalize our data, in preparation for KNN,ANN, Decision Tree models,etc.
+Now, we need to further clean, randomize and normalize our data, in preparation for KNN,ANN, Decision Tree models, and SVM. For our prediction models, we reclassify our data into 3 classes.
 
 ```{r}
 ##Building categories
@@ -144,7 +152,7 @@ normalize <- function(x) {
 absent_n <- as.data.frame(lapply(absent_mm, normalize))
 ```
 
-* Struggles and trials we have been through in this stage:
+### Considerations in Deciding Number of Classes
 
 We struggled a lot with creating categories for Absenteeism in hours. Our response variable was absenteeism time in hours and after some data exploration we noticed that the distribution of hours was not continuous. It was discrete and mostly in increments of 8 hours after surpassing a day of absence. So, we  decided to make this a factor instead since we believed that would provide more information. For example, stating that an employee would be absent for 1-3 days is more intuitive to understand than 30 hours. 
 
@@ -173,15 +181,18 @@ abs_test_label <- absent_SP[729:828,41]
 KNN_imp <- train(`absent$timecat` ~ ., data = absent_SP, method = "knn")
 KNN_imp
 KNN_predict <- predict(KNN_imp, absent_SP)
-confusionMatrix(KNN_predict,absent_SP$`absent$timecat`)
-
+cm_knn<- confusionMatrix(KNN_predict,absent_SP$`absent$timecat`)
+# Display Confusion Matrix
+cm_knn
+knn_acc <- round(cm_knn$overall[1], 2)
+knn_kap <- round(cm_knn$overall[2], 2)
 ```
 
-Interpretation: We can see that the KNN accuracy is just 61% with Kappa being 23%. The low value might be because of the dimeensionality issue since the data set has a lot of variables, which reduces accuracy of models such as KNN. We can also see the highest sensitivity for less than a day, which forms the majority of the data while the other two categories having high specificity.
+Interpretation: We can see that the KNN accuracy is just `r knn_acc`\% with Kappa being `r knn_kap`\%. The low value might be because of the dimeensionality issue since the data set has a lot of variables, which reduces accuracy of models such as KNN. We can also see the highest sensitivity for less than a day, which forms the majority of the data while the other two categories having high specificity.
 
 #  ANN Model
 
-Now we build ANN models with 2/5/8 neurons, and see which one gives the best prediction results.
+Now we build ANN models with 2, 5, and 8 neurons, and see which one gives the best prediction results.
 
 ```{r}
 absam<-absent_SP
@@ -193,7 +204,7 @@ n<-names(train)
 f <- as.formula(paste("less.than.day + less.than.one.week + more.than.one.week ~", paste(n[!n %in% c("less.than.day", "less.than.one.week", "more.than.one.week" )], collapse = " + ")))
 
 
-library(neuralnet)
+library(neuralnet, warn.conflicts=FALSE, quietly = TRUE)
 nn <- neuralnet(f,
                 data = train,
                 hidden = c(8,5,2),
@@ -218,14 +229,20 @@ pr.nn_2 <- max.col(pr.nn_)
 mean(pr.nn_2 == original_values)
 
 
-confusionMatrix(as.factor(pr.nn_2),as.factor(original_values))
+cm_ann <- confusionMatrix(as.factor(pr.nn_2),as.factor(original_values))
+cm_ann
+ann_acc <- round(cm_ann$overall[1], 2)
+ann_kap <- round(cm_ann$overall[2], 2)
+ann_pv <- round(cm_ann$overall[6], 2)
 ```
 
 Interpretation:
 
-#  Decision Tree, Boosted Decision Tree with 10 trials/100 trials/a cost matrix
+The ANN model above gives us a prediction accuracy of `r ann_acc`\% which is decent enough but misses 1 out of every 4 predictions. The model gives a `r ann_kap`\% kappa statistic, which indicates moderate agreement between prediction and actual data behavior. This model does not really tell us which variables are significant in determining the category of an absentee. Class 1 (less than a day) has the highest sensitivity, closest to 1, which does form a majority of the data points.
 
-Now, we build three different Decision Tree Models and graphs to see which variable accounts for the most Accuracy and how good Decision Tree Models are when predicitng Abseenteeism.
+#  Decision Trees: Boosted Decision Tree with 10 trials/100 trials/a cost matrix
+
+Now, we build three different Decision Tree Models and graphs to see which variable accounts for the most Accuracy and how good Decision Tree Models are when predicitng Abseenteeism. We shall analyze Random Forest Decision Tree in the next section.
 
 ```{r}
 set.seed(12345)
@@ -241,7 +258,7 @@ prop.table(table(abs_train_tree$timecat))
 prop.table(table(abs_test_tree$timecat))
 
 # build the simplest decision tree
-library(C50)
+library(C50, warn.conflicts=FALSE, quietly = TRUE)
 abs_model <- C5.0(abs_train_tree[-14], abs_train_tree$timecat)
 
 # display simple facts about the tree
@@ -250,7 +267,7 @@ abs_model
 # display detailed information about the tree
 summary(abs_model)
 
-plot(abs_model)
+# plot(abs_model)
 #Reason6: Disease for circulatory system
 
 
@@ -258,7 +275,7 @@ plot(abs_model)
 abs_pred <- predict(abs_model, abs_test_tree)
 
 # cross tabulation of predicted versus actual classes
-library(gmodels)
+library(gmodels, warn.conflicts=FALSE, quietly = TRUE)
 CrossTable(abs_test_tree$timecat, abs_pred,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('actual timecat', 'predicted timecat'))
@@ -274,7 +291,7 @@ The above Decision Tree model gives a really high accuracy (~90%) and a high Kap
 abs_boost10 <- C5.0(abs_train_tree[-14], abs_train_tree$timecat,
                        trials = 10)
 summary(abs_boost10)
-plot(abs_boost10)
+# plot(abs_boost10)
 abs_boost_pred10 <- predict(abs_boost10, abs_test_tree)
 CrossTable(abs_test_tree$timecat, abs_boost_pred10,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
@@ -320,11 +337,14 @@ Decision tree with a cost matrix does not improve the model much, either.
 Therefore, the best model is the boosted decision tree with 10 trials.
 
 
-# KSVM Model
+
+# SVM Model
+
+
 Below, Absenteeism is predicted using an SVM classifier with a linear kernel using the significant features found above as the predictors. 
 
 ```{r}
-library(kernlab)
+library(kernlab, warn.conflicts=FALSE, quietly = TRUE)
 ksvm_model1 <- ksvm(timecat~ ., data = abs_train_tree,
                           kernel = "vanilladot")
 
@@ -338,7 +358,7 @@ confusionMatrix(ksvm_predictions,abs_test_tree$timecat)
 
 ```
 
-We tried the KSVM model with various kerns. After doing a confusion matrix for both models, we found the KSVM model with rbf kernel, as shown below, has a more accurate prediction rate.
+We tried the SVM model with various kernels. After doing a confusion matrix for both models, we found the SVM model with rbf kernel (with default sigma=0.5 and penalty cost = 1), as shown below, has a more accurate prediction rate.
 
 ```{r}
 ## Trying a different kernel
@@ -350,11 +370,11 @@ confusionMatrix(ksvm_predictions2,abs_test_tree$timecat)
 
 ```
 
+## Using e1071 to Determine Best Parameters for SVM Classification
 
-# SVM Model
+The library e1071 allows us to create a SVM classifier with automatic parameters that give the best prediction accuracy.
 
 ```{r}
-
 n <- nrow(absent)  # Number of observations
 ntrain <- round(n*0.75)  # 75% for training set
 set.seed(314)    # Set seed for reproducible results
@@ -364,27 +384,43 @@ test_absent <- absent_r[-tindex,]   # Create test set
 
 
 ## Construct SVM Model
-library(e1071)
+library(e1071, warn.conflicts=FALSE, quietly = TRUE)
 svm1 <- svm(timecat~., data=absent, 
           method="C-classification", kernal="vanilladot", 
           gamma=0.1, cost=10)
+svm1
+```
 
+We see that the best kernel is a rbf kernel with gamma = 0.1 and penalty cost 10. (which means misclassification are given higher penalties, thus our models tends to a hard-margin SVM).
+
+```{r}
 ## Making Predictions
 prediction <- predict(svm1, test_absent)
 ## Display confusion matrix
-library(caret)
+library(caret, warn.conflicts=FALSE, quietly = TRUE)
 xtab <- confusionMatrix(as.factor(test_absent$timecat), as.factor(prediction))
 xtab
+svm_acc <- round(xtab$overall[1], 2)
+svm_kap <- round(xtab$overall[2], 2)
 ```
 
-We consider the model above to be "good" in the sense that the $p$- value is very small, and the accuracy is high (at least better than chance, and as close as possible to 1).
-Linear KSVM model gives 77% accuracy and 59% Kappa;KSVM model with rbf kernal gives 95% accuracy and 91% Kappa.After using the above models to predict Absenteeism, we found that the Decision Tree model and KSVM models are more accurate. 
+We consider the model above to be good in the sense that the $p$- value is very small, and the accuracy is high (at least better than chance, and as close as possible to 1).
+SVM model with rbf kernal gives 95% accuracy and 91% Kappa while the linear-kernel inear SVM model gives 77% accuracy and 59% Kappa. After using the above models to predict Absenteeism, we found that the Decision Tree model and SVM models are more accurate. 
+
+# Deciding Models and Interpreting Results
+
+## Comments on the SVM model, Decision Tree and Shape of Data Distribution
+
+The best SVM model has a rbf kernel with sigma = 0.1. Recall the definition of a radial basis function kernel
+$$K(\mathbb{x},\mathbb{x}') = \exp(-\gamma\|\mathbb{x} - \mathbb{x}'\|^2) $$ and that $\gamma =\frac{1}{2\sigma^2}$. So a gamma of 0.1 indicates a sigma of $\sqrt{5} > 1$ which indicates a sense of "smoothness" to the data distribution. (i.e. we may find a smooth curve than can split the data into their categories fairly well, where the curve may have a close-to-linear shape). This means that the data is in a sense "linearly-separable" in certain variables. So decision trees make very good prediction models because a "split" is possible for some significant variables.
+
+
+##  Interpreting Results using Random Forest Explainer
 
 From the decision tree graph, we can see Reason for Absense is the most important facotor when classifying absent hours, let's make a random forest model and see if it also tells us the same conclusion.
 
-#  Random Forest + Explainer
 ```{r}
-library(randomForest)
+library(randomForest, warn.conflicts=FALSE, quietly = TRUE)
 # Training with Random forest model
 forest <- randomForest(timecat ~. , data=train_absent, localImp = TRUE)
 forest
@@ -399,34 +435,35 @@ predictions2 <- predict(forest, test_absent, type = "class")
 # Accuracy and other metrics
 confusionMatrix(predictions2, test_absent$timecat)
 ```
+### Measures of Importance
 
+We use variables with smaller mean minimum depth as those that are more significant. Minimum depth of a variable here is defined as the depth of a tree with this variable as the first rule. That is, if we split the data on a certain variable first, then using random forests for later splits, the minimum depth is the number of splits that follows. So the less the number of splits required, the more informative a variable is.
 ```{r}
-library(randomForestExplainer)
+library(randomForestExplainer, warn.conflicts=FALSE, quietly = TRUE)
 min_depth_frame <- min_depth_distribution(forest)
 save(min_depth_frame, file = "min_depth_frame.rda")
 load("min_depth_frame.rda")
-head(min_depth_frame, n = 10)
 
 # plot_min_depth_distribution(forest) # gives the same result as below but takes longer
 plot_min_depth_distribution(min_depth_frame)
-plot_min_depth_distribution(min_depth_frame, mean_sample = "relevant_trees", k = 15)
+```
 
+
+ If we sort by mean_min_depth, we see the most informative variables. Here, we use the term informative based on the highest information gain given by each variable as we split the data.
+```{r}
+library(DT, warn.conflicts=FALSE, quietly = TRUE)
 importance_frame <- measure_importance(forest)
 save(importance_frame, file = "importance_frame.rda")
 load("importance_frame.rda")
-importance_frame
+DT::datatable(importance_frame)
 ```
 
-```{r}
-#explain_forest(forest, interactions=TRUE, data=train_absent)
-```
-
-Interpretation:Based on Random Forest package, we further confirmed the variable most used to determine absenteeism is Reason for Absence. The top 3 after Reason for Absence is work load average, age, and service time.If the work load increases in an average day, absenteeism hours decrease. As age increases, absenteeism hours increase. As service time increase, absenteeism hours increase - probably due to seniority.
+Using the Random Forest package, we further confirmed the variable most used to determine absenteeism is Reason for Absence. The top 3 after Reason for Absence is work load average, age, and service time. If the work load increases in an average day, absenteeism hours decrease. As age increases, absenteeism hours increase. As service time increase, absenteeism hours increase - probably due to seniority.
 
 We recommend using the decision tree for future use since it gives us a rule to use. It provides a heuristic on how to classify an employee’s absence based some significant variables 
 
 
-# Further exploration on Reason for absence:
+## Further exploration on Reason for absence:
 
 Since Reason for Absence was the most significant variable that determined Absenteeism hours, we wanted to see what might be causing these reasons by plotting some interactions.
 
@@ -463,9 +500,9 @@ Interpretation:
 
 # Remarks about Business values and potential:
 
-Based on Reasons for absence that an employee gives, where he/she lives, average social service time he/she spends every year,age,work load,and the day of the week/the month/the season when he/she askes for a leave, HR can predict how many hours an employee will be absent on the job, therefore it helps on makeing decisions on:
+Based on Reasons for absence that an employee gives, where he/she lives, average social service time he/she spends every year,age,work load,and the day of the week/the month/the season when he/she askes for a leave, HR can predict how many hours an employee will be absent on the job, therefore it helps on making decisions on:
 
-*Hiring employees,estimating new hire headcounts
-*Altering healthcare plans
-*Informing employee relocation, regulations and contract benefits
-*Desiging target hitting reward systems, average workload
+* Hiring employees,estimating new hire headcounts
+* Altering healthcare plans
+* Informing employee relocation, regulations and contract benefits
+* Desiging target hitting reward systems, average workload
