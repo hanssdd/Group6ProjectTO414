@@ -22,6 +22,8 @@ library(kernlab)
 library(class)
 ```
 # Introduction of the data set
+The Absenteesim data set contains personal information about employees working at a Delivery Company in Brazil, along with number and reasons for absences. It has 21 columns and 740 rows of data.Excessive absenteeism leads to loss of productivity which negatively affects company performance (~$84B in costs yearly), therefore, we decided that analyzing absenteeism will potentially add great business values to companies;
+
 The Absenteesim data set has 21 columns of variables, not all of which may be ready for immediate regression and analysis. Moreover, for the sake of time and memory efficiency, we shall eliminate variables that are not scalable (those that cannot be converted to a numeric scale or ordered sequence), and have too many factor levels.
 
 
@@ -37,7 +39,6 @@ First, we tried to run linear models. However, because we have too many variable
 
 ```{r}
 ##Converting into factors 
-#absent$ï..ID<- as.factor(absent$ï..ID)
 absent$Reason.for.absence <- as.factor(absent$Reason.for.absence)
 absent$Month.of.absence <- as.factor(absent$Month.of.absence)
 absent$Day.of.the.week <- as.factor(absent$Day.of.the.week)
@@ -146,14 +147,17 @@ absent_n <- as.data.frame(lapply(absent_mm, normalize))
 * Struggles and trials we have been through in this stage:
 
 We struggled a lot with creating categories for Absenteeism in hours. Our response variable was absenteeism time in hours and after some data exploration we noticed that the distribution of hours was not continuous. It was discrete and mostly in increments of 8 hours after surpassing a day of absence. So, we  decided to make this a factor instead since we believed that would provide more information. For example, stating that an employee would be absent for 1-3 days is more intuitive to understand than 30 hours. 
+
 First we made 6 categoriess("not.absent","less.than.one.day","one.to.four.days","four.days.to.one.week","one.to.two.weeks","more.than.two.weeks") but we ran into the issue of a skewed distribution among the classes, hence we had very low Accuracy and Kappa. We noticed that the large majority of people were only absent for a couple hours in a day, the second largest majority was between 1-5 days. After some trails, we settled on a factor of 3 levels- "less.than.day", "less.than.one.week", and "more.than.one.week ".
 
 Furthermore,we decided to add more data rows(from 740 to 828) so that we can have more evenly distributed data.(so that we don't have a test data set with 0 data in"more.than.one.week") 
 
-# Classification
 Below are the models we made in order to find out the best model in predicting roughly how many days/weeks an employee will be absent.
-##1. KNN Model
+
+#  KNN Model
+
 We now build a KNN model with the randomized and normalized data set and significant variables that we decided to keep.
+
 ```{r}
 ##Getting my own absent from the above
 absent_SP <- cbind(absent_n, absent$timecat)
@@ -175,8 +179,10 @@ confusionMatrix(KNN_predict,absent_SP$`absent$timecat`)
 
 Interpretation: We can see that the KNN accuracy is just 61% with Kappa being 23%. The low value might be because of the dimeensionality issue since the data set has a lot of variables, which reduces accuracy of models such as KNN. We can also see the highest sensitivity for less than a day, which forms the majority of the data while the other two categories having high specificity.
 
-## 2. ANN Model
-Now we build ANN models with 2/5/8 neurons.
+#  ANN Model
+
+Now we build ANN models with 2/5/8 neurons, and see which one gives the best prediction results.
+
 ```{r}
 absam<-absent_SP
 #View(absam)
@@ -217,8 +223,10 @@ confusionMatrix(as.factor(pr.nn_2),as.factor(original_values))
 
 Interpretation:
 
-## 3. Decision Tree, Boosted Decision Tree with 10 trials/100 trials/a cost matrix
+#  Decision Tree, Boosted Decision Tree with 10 trials/100 trials/a cost matrix
+
 Now, we build three different Decision Tree Models and graphs to see which variable accounts for the most Accuracy and how good Decision Tree Models are when predicitng Abseenteeism.
+
 ```{r}
 set.seed(12345)
 
@@ -289,6 +297,7 @@ confusionMatrix(abs_test_tree$timecat, abs_boost_pred100)
 
 Surprisingly, boosted decision tree with 100 trials does not improve the model much.
 Next, we tried to create a cost matrix to see if it can improve Accuracy and Kappa.
+
 ```{r}
 ## Making some mistakes more costly than others
 # create a cost matrix
@@ -306,11 +315,14 @@ CrossTable(abs_test_tree$timecat, abs_cost_pred,
 confusionMatrix(abs_test_tree$timecat,abs_cost_pred)
 
 ```
+
 Decision tree with a cost matrix does not improve the model much, either.
 Therefore, the best model is the boosted decision tree with 10 trials.
 
-## KSVM Model
+
+# KSVM Model
 Below, Absenteeism is predicted using an SVM classifier with a linear kernel using the significant features found above as the predictors. 
+
 ```{r}
 library(kernlab)
 ksvm_model1 <- ksvm(timecat~ ., data = abs_train_tree,
@@ -325,7 +337,8 @@ ksvm_predictions <- as.factor(ksvm_predictions)
 confusionMatrix(ksvm_predictions,abs_test_tree$timecat)
 
 ```
-We tried the KSVM model with various kerns. After doing a confusion matrix for both models, we found the KSVM model with rbf kernel has a more accurate prediction rate.
+
+We tried the KSVM model with various kerns. After doing a confusion matrix for both models, we found the KSVM model with rbf kernel, as shown below, has a more accurate prediction rate.
 
 ```{r}
 ## Trying a different kernel
@@ -363,12 +376,13 @@ library(caret)
 xtab <- confusionMatrix(as.factor(test_absent$timecat), as.factor(prediction))
 xtab
 ```
+
 We consider the model above to be "good" in the sense that the $p$- value is very small, and the accuracy is high (at least better than chance, and as close as possible to 1).
 Linear KSVM model gives 77% accuracy and 59% Kappa;KSVM model with rbf kernal gives 95% accuracy and 91% Kappa.After using the above models to predict Absenteeism, we found that the Decision Tree model and KSVM models are more accurate. 
 
 From the decision tree graph, we can see Reason for Absense is the most important facotor when classifying absent hours, let's make a random forest model and see if it also tells us the same conclusion.
 
-# 4. Random Forest + Explainer
+#  Random Forest + Explainer
 ```{r}
 library(randomForest)
 # Training with Random forest model
@@ -404,98 +418,18 @@ importance_frame
 ```
 
 ```{r}
-explain_forest(forest, interactions=TRUE, data=train_absent)
+#explain_forest(forest, interactions=TRUE, data=train_absent)
 ```
 
-Interpretation:
+Interpretation:Based on Random Forest package, we further confirmed the variable most used to determine absenteeism is Reason for Absence. The top 3 after Reason for Absence is work load average, age, and service time.If the work load increases in an average day, absenteeism hours decrease. As age increases, absenteeism hours increase. As service time increase, absenteeism hours increase - probably due to seniority.
+
+We recommend using the decision tree for future use since it gives us a rule to use. It provides a heuristic on how to classify an employee’s absence based some significant variables 
 
 
+# Further exploration on Reason for absence:
 
-# Prediction 
+Since Reason for Absence was the most significant variable that determined Absenteeism hours, we wanted to see what might be causing these reasons by plotting some interactions.
 
-## ANN model
-```{r}
-setwd("/Users/candicelin/Desktop/TO 414/Absenteeism_at_work_AAA")
-absentANN <-read.csv("Absenteeism_at_work2.csv")
-str(absentANN)
-#absentANN$Reason.for.absence <- as.factor(absentANN$Reason.for.absence)
-#absentANN$Month.of.absence <- as.factor(absentANN$Month.of.absence)
-#absentANN$Day.of.the.week <- as.factor(absentANN$Day.of.the.week)
-#absentANN$Seasons <- as.factor(absentANN$Season)
-absentANN$Disciplinary.failure <-as.factor(absentANN$Disciplinary.failure)
-#absentANN$Education <- as.factor(absentANN$Education)
-#absentANN$Social.drinker <-as.factor(absentANN$Social.drinker)
-#absentANN$Social.smoker <-as.factor(absentANN$Social.smoker)
-absentANN$ID  <- NULL
-absentANN$Work.load.Average.day<-as.numeric(absentANN$Work.load.Average.day)
-absentANN$Month.of.absence<- NULL
-absentANN$Weight<- NULL
-absentANN$is_Thur<-if_else(absentANN$Day.of.the.week==5,1,0)
-absentANN$Day.of.the.week<-NULL
-absentANN$is_Seas4<-if_else(absentANN$Seasons==4,1,0)
-absentANN$Seasons<-NULL
-#absent$is_Educ3<-if_else(absent$Education==3,1,0) Once I do this, Seasons and Education3 no longer significant
-absent$Education<-NULL
-absentANN$Transportation.expense<-NULL
-absentANN$Social.drinker<-NULL
-absentANN$Disciplinary.failure<-NULL
-
-
-# apply normalization to entire data frame
-absent_ANN <- as.data.frame(lapply(absentANN, normalize))
-
-# confirm that the range is now between zero and one
-summary(absent_ANN$Absenteeism.time.in.hours)
-
-# compared to the original minimum and maximum
-summary(absentANN$Absenteeism.time.in.hours)
-
-# create training and test data
-absent_ANN_train <- absent_ANN[1:540, ]
-absent_ANN_test <- absent_ANN[541:740, ]
-
-## Step 3: Training a model on the data ----
-# train the neuralnet model
-library(neuralnet)
-
-# simple ANN with only a single hidden neuron
-ANN_model <- neuralnet(Absenteeism.time.in.hours~.,
-                              data = absent_ANN)
-
-
-# visualize the network topology
-plot(ANN_model)
-
-## Step 4: Evaluating model performance ----
-# obtain model results
-model_results <- compute(ANN_model, absent_ANN_test)
-# obtain predicted strength values
-predicted_strength <- model_results$net.result
-# examine the correlation between predicted and actual values
-cor(predicted_strength, absent_ANN_test$Absenteeism.time.in.hours)
-
-## Step 5: Improving model performance ----
-# a more complex neural network topology with  hidden neurons
-ANN_model2 <- neuralnet(Absenteeism.time.in.hours ~ ., data=absent_ANN,hidden = 15)
-
-# plot the network
-#plot(ANN_model2)
-# evaluate the results as we did before
-model_results2 <- compute(ANN_model2, absent_ANN_test)
-predicted_strength2 <- model_results2$net.result
-cor(predicted_strength2, absent_ANN_test$Absenteeism.time.in.hours)
-
-
-```
-With 15 neurons, we get a pretty high accruacy, ~88%. From the result, we can conclude that the variables that we keep are doing a good job in predicting Absenteeism.time.in.hours.
-
-
-# Remarks about Business values and potential:
-
-Based on Reasons for absence that an employee gives, where he/she lives, average social service time he/she spends every year,age,work load,and the day of the week/the month/the season when he/she askes for a leave, HR can predict how many hours an employee will be absent on the job, therefore it helps on makeing decisions on hiring employees,estimating new hire headcounts, altering healthcare plans,employee relocation, regulations and contract benefits.
-
-
-# Reason for absence
 ```{r}
 absent_reasons <- absent_SP
 
@@ -527,3 +461,11 @@ Interpretation:
 
 + Joint Pains go up with average workload and in Season 4. Since season 4 is spring, it suggests that Joint pains might be a common false reason or there might be an effect of going outdoors after a while or even spring cleaning.
 
+# Remarks about Business values and potential:
+
+Based on Reasons for absence that an employee gives, where he/she lives, average social service time he/she spends every year,age,work load,and the day of the week/the month/the season when he/she askes for a leave, HR can predict how many hours an employee will be absent on the job, therefore it helps on makeing decisions on:
+
+*Hiring employees,estimating new hire headcounts
+*Altering healthcare plans
+*Informing employee relocation, regulations and contract benefits
+*Desiging target hitting reward systems, average workload
